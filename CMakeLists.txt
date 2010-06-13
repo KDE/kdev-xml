@@ -20,7 +20,6 @@ include ( KDE4Defaults )
 add_definitions (
     ${QT_DEFINITIONS}
     ${KDE4_DEFINITIONS}
-    -DKDE_DEFAULT_DEBUG_AREA=0
     -fno-inline
     -fno-default-inline
     -ggdb3
