@@ -9,7 +9,7 @@ set(kdevxmlcatalogui_SRCS
 
 kde4_add_ui_files( kdevxmlcatalogui_SRCS xmlcatalogform.ui addschemaform.ui )
 
-include_directories(${xml_SOURCE_DIR}/catalog)
+include_directories(${xml_SOURCE_DIR})
 
 set(kdevxmlcatalogui_PICS_RCCS pics/catalogpics.qrc )
 qt4_add_resources(kdevxmlcatalogui_PICS_SRCS  ${kdevxmlcatalogui_PICS_RCCS})

@@ -14,6 +14,7 @@ include_directories(
     ${KDEVPLATFORM_INCLUDE_DIR}
     ${KDE4_INCLUDES}
     ${QT4_INCLUDES}
+    ${xml_SOURCE_DIR}
 )
 
 kdevpgqt_generate(_kdevpgList sgml NAMESPACE Xml DEBUG_VISITOR

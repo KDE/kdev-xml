@@ -16,6 +16,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/duchain/parser
     ${CMAKE_CURRENT_BINARY_DIR}/duchain/parser
     ${KDEVPGQT_INCLUDE_DIR}
+    ${xml_SOURCE_DIR}
 )
 set(kdevsgmllanguagesupport_PART_SRCS
     languagesupport.cpp

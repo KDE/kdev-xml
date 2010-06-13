@@ -10,7 +10,7 @@ set(kdevxmlvalidator_SRCS
   xmlvalidatorjob.cpp
 )
 
-include_directories(${xml_SOURCE_DIR}/catalog ${PC_LIBXML2_INCLUDE_DIRS})
+include_directories(${xml_SOURCE_DIR} ${PC_LIBXML2_INCLUDE_DIRS})
 
 kde4_add_plugin(kdevxmlvalidator ${kdevxmlvalidator_SRCS})
 
