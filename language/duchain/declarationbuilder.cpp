@@ -58,21 +58,22 @@ ElementDeclaration* DeclarationBuilder::createClassInstanceDeclaration(const QSt
     return dec;
 }
 
-KDevelop::Declaration* DeclarationBuilder::createImportDeclaration(const QString& identifier, const KDevelop::SimpleRange& range, const KUrl& url)
+void DeclarationBuilder::createImportDeclaration(const QString& identifier, const KDevelop::SimpleRange& range, const KUrl& url)
 {
     KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(identifier.toUtf8())));
     KDevelop::DUChainWriteLocker lock;
     KDevelop::TopDUContext* includedCtx = KDevelop::DUChain::self()->chainForDocument(url);
     if ( !includedCtx ) {
         // invalid include
-        return NULL;
+        return;
     }
     KDevelop::Declaration* dec = openDefinition<KDevelop::Declaration>(id, range);
     dec->setKind(KDevelop::Declaration::Import);
     //injectContext(editor()->smart(), includedCtx);
     //eventuallyAssignInternalContext();
     //closeInjectedContext(editor()->smart());
-    return dec;
+    
+    closeDeclaration();
 }
 
 void DeclarationBuilder::visitDtdDoctype(DtdDoctypeAst* node)
@@ -92,7 +93,6 @@ void DeclarationBuilder::visitDtdDoctype(DtdDoctypeAst* node)
             QString doctype = nodeText(node->name);
             KUrl url = CatalogHelper::resolve(publicId, systemId, QString(), doctype, KMimeType::Ptr(), this->editor()->currentUrl().toUrl());
             createImportDeclaration(url.pathOrUrl(), range, url);
-            closeDeclaration();
         }
     }
 }
@@ -321,7 +321,6 @@ void DeclarationBuilder::visitDtdEntityInclude(DtdEntityIncludeAst* node)
                                           this->editor()->currentUrl().toUrl());
         if ( url.isValid() ) {
             createImportDeclaration(url.pathOrUrl(), range, url);
-            closeDeclaration();
         }
     }
 }
@@ -368,7 +367,6 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
                                           this->editor()->currentUrl().toUrl());
         if ( url.isValid() ) {
             createImportDeclaration(url.pathOrUrl(), range, url);
-            closeDeclaration();
         }
     }
 }

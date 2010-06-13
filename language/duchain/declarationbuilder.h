@@ -75,9 +75,9 @@ protected:
                                         ElementDeclarationData::ElementType type,
                                         const QString &nameSpacePrefix = QString());
 
-    KDevelop::Declaration *createImportDeclaration(const QString &identifier,
-                                                   const KDevelop::SimpleRange &range,
-                                                   const KUrl &url);
+    void createImportDeclaration(const QString &identifier,
+                                 const KDevelop::SimpleRange &range,
+                                 const KUrl &url);
     QHash<QString, QString> m_dtdElementExclude;
 
     /** Keeps a list of defined elements
