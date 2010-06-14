@@ -48,6 +48,9 @@ void Tokenizer::init(TokenStream* tokenstream, const QChar* content, qint64 cont
     m_contentLength = contentLength;
     m_enlc = 0;
     m_processEndline = true;
+    m_elementNameRegexp.setPattern("<[ \\t>/\\?!%&]*([^ \\t></?!%&]+[:])?([^ \\t></?!%&]+).*");
+    m_doctypeRegexp.setPattern(".*<!\\s*doctype\\s+([\\w\\d]*)\\s*(public\\s+([\"'])([^\"']*)[\"'](\\s+[\"']([^\"']*)[\"'])?)?(system\\s*[\"']([^\"']*)[\"'])?.*");
+    m_doctypeRegexp.setCaseSensitivity(Qt::CaseInsensitive);
 }
 
 Tokenizer::~Tokenizer()
@@ -163,23 +166,20 @@ QString Tokenizer::removeWhites(QString str) const {
 
 QString Tokenizer::elementName(const QString& token) const
 {
-    static QRegExp exp("<[ \\t>/\\?!%&]*([^ \\t></?!%&]+[:])?([^ \\t></?!%&]+).*");
-    if (exp.exactMatch(QString(token).replace(QChar('\n'), QChar(' ')).replace(QChar('\r'), QChar(' '))))
-        return exp.cap(2);
+    if (m_elementNameRegexp.exactMatch(QString(token).replace(QChar('\n'), QChar(' ')).replace(QChar('\r'), QChar(' '))))
+        return m_elementNameRegexp.cap(2);
     kDebug() << "Element name match failed!";
     return QString::null;
 }
 
 void Tokenizer::doctype(const QString& token, QString& name, QString& publicId, QString& systemId) const
 {
-    static QRegExp exp(".*<!\\s*doctype\\s+([\\w\\d]*)\\s*(public\\s+([\"'])([^\"']*)[\"'](\\s+[\"']([^\"']*)[\"'])?)?(system\\s*[\"']([^\"']*)[\"'])?.*",
-                       Qt::CaseInsensitive);
-    if (exp.exactMatch(token)) {
-        name = exp.cap(1);
-        publicId = exp.cap(4);
-        systemId = exp.cap(6);
+    if (m_doctypeRegexp.exactMatch(token)) {
+        name = m_doctypeRegexp.cap(1);
+        publicId = m_doctypeRegexp.cap(4);
+        systemId = m_doctypeRegexp.cap(6);
         if (systemId.isEmpty())
-            systemId = exp.cap(8);
+            systemId = m_doctypeRegexp.cap(8);
     } else {
         kDebug() << "Doctype match failed!";
     }
