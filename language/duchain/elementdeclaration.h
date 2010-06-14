@@ -94,7 +94,7 @@ public:
     virtual void clearAttributes();
 
     enum {
-        Identity = 87
+        Identity = 90
     };
     
 private:
