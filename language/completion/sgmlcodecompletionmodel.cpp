@@ -569,7 +569,7 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         }
         foreach(View * v, document->views()) {
             if (v->isActiveView())
-                v->setCursorPosition(range.start());
+                v->setCursorPosition(range.start() + Cursor(0, text.length()));
         }
         return;
     }
