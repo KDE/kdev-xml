@@ -632,6 +632,9 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
     //Elements
     if ((seperator == '<' || seperator == '>') || seperator.isNull()) {
         range = growRangeLeft(document, range, "<");
+        if (!text.startsWith('<')) {
+          text.prepend('<');
+        }
         if (trimmedLine.isEmpty()) {
             range.start().setColumn(0);
             text.prepend(getIndentstring(document, depth));
