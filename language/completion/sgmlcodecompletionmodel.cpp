@@ -238,6 +238,11 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
         kDebug(debugArea()) << "# element null";
     }
 
+    if (tag.isEmpty() && esc.trimmed().isEmpty()) {
+        m_items.append(CompletionItem("<!DOCTYPE html>", 10, Other));
+        m_items.append(CompletionItem("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", 10, Other));
+    }
+
     if (esc.endsWith('!') && tag.isEmpty()) {
         m_items.append(CompletionItem("DOCTYPE", 10, Other));
         m_items.append(CompletionItem("ELEMENT", 10, Other));
@@ -625,26 +630,13 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
     }
 
     //Elements
-    if ((seperator == '<' || seperator == '>')) {
+    if ((seperator == '<' || seperator == '>') || seperator.isNull()) {
         range = growRangeLeft(document, range, "<");
         if (trimmedLine.isEmpty()) {
             range.start().setColumn(0);
-            text = QString("%1<%2").arg(getIndentstring(document, depth),text);
-            document->replaceText(range, text);
-        } else {
-            text = QString("<%1").arg(text);
-            document->replaceText(range, text);
+            text.prepend(getIndentstring(document, depth));
         }
-    } else if (seperator.isNull()) {
-        range = growRangeLeft(document, range, "<");
-        if (trimmedLine.isEmpty()) {
-            range.start().setColumn(0);
-            text = QString("%1<%2").arg(getIndentstring(document, depth),text);
-            document->replaceText(range, text);
-        } else {
-            text = QString("<%1").arg(text);
-            document->replaceText(range, text);
-        }
+        document->replaceText(range, text);
     } else {
         text = QString("%1").arg(text);
         document->replaceText(range, text);
