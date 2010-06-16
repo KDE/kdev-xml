@@ -18,6 +18,7 @@
 #include "catalogmanager.h"
 #include "oasiscatalog.h"
 #include "oasiscatalogreaderwriter.h"
+#include "catalog_debug.h"
 
 #include <QtCore/QFile>
 
@@ -27,7 +28,6 @@
 #include <KDE/KLocalizedString>
 #include <KDE/KStandardDirs>
 
-#define debug() kDebug()
 #include "sgmlcatalogreaderwriter.h"
 
 CatalogManager::CatalogManager() {
@@ -175,6 +175,8 @@ bool CatalogManager::addCatalog ( const QString& file, const QString &name ) {
 
 bool CatalogManager::addCatalog(QList<ICatalog *> &ctlg, const QString& file, const QString& name, bool readOnly)
 {
+    debug() << "Loading catalog:" << file;
+  
     if (file.isEmpty())
         return false;
 
@@ -200,6 +202,7 @@ bool CatalogManager::addCatalog(QList<ICatalog *> &ctlg, const QString& file, co
         debug() << "Unable to create catalog for:" << file;
         return false;
     }
+    
     c->setParameter(ICatalogManager::ParameterFile, file);
     c->setParameter(ICatalogManager::ParameterName, name);
 
@@ -233,6 +236,8 @@ bool CatalogManager::load()
 {
     loadUserCatalogs();
     loadSystemCatalogs();
+    debug() << "Number of user catalogs loaded:" << m_ctlg.size();
+    debug() << "Number of system catalogs loaded:" << m_sysctlg.size();
     return true;
 }
 

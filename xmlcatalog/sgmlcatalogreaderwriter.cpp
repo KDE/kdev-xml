@@ -18,6 +18,7 @@
 
 #include "sgmlcatalogreaderwriter.h"
 #include "sgmlcatalog.h"
+#include "catalog_debug.h"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
@@ -109,7 +110,7 @@ ICatalog* SGMLCatalogReaderWriter::readCatalog(const QString& file, SGMLCatalog*
 {
     QFile f(file);
     if(!f.open(QIODevice::ReadOnly)) {
-        kDebug() << "Unable to open file" << file;
+        debug() << "Unable to open file" << file;
         return 0;
     }
     QTextStream stream(&f);
@@ -181,7 +182,7 @@ ICatalog* SGMLCatalogReaderWriter::readCatalog(const QString& file, SGMLCatalog*
             //CATALOG sysid
             while (list.size() < 2 && charPos < content.size())
                 list << nextWord(content, &lines, &charPos);
-            kDebug() << "Multiple catalogs not supported";
+            debug() << "Multiple catalogs not supported";
             continue;
         }
 
@@ -201,7 +202,7 @@ ICatalog* SGMLCatalogReaderWriter::readCatalog(const QString& file, SGMLCatalog*
             continue;
         }
 
-        kDebug() << "Not supported: " << list[0];
+        debug() << "Not supported: " << list[0];
     }
     return catalog;
 }
@@ -216,7 +217,7 @@ bool SGMLCatalogReaderWriter::writeCatalog(const ICatalog* catalog, const QStrin
     //TODO keep catalog format
     QFile f(file);
     if(!f.open(QIODevice::WriteOnly)) {
-        kDebug() << "Unable to open file" << file;
+        debug() << "Unable to open file" << file;
         return false;
     }
     QTextStream stream(&f);

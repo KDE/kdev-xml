@@ -17,25 +17,28 @@
 
 #include "sgmlcodecompletionmodel.h"
 #include "elementdeclaration.h"
+#include "../language_debug.h"
 
-#include <KTextEditor/View>
-#include <KTextEditor/Document>
+#include "../duchain/sgmldefaultvisitor.h"
+#include "../duchain/parser/editorintegrator.h"
+#include "../duchain/parser/parsesession.h"
+
+#include <QtGui/QIcon>
+
+#include <KDE/KTextEditor/View>
+#include <KDE/KTextEditor/Document>
+#include <KDE/KMimeType>
 
 #include <language/duchain/topducontext.h>
 #include <language/duchain/duchainlock.h>
 #include <language/duchain/duchain.h>
 #include <language/duchain/declaration.h>
 #include <language/duchain/classdeclaration.h>
-#include <QIcon>
-#include <KMimeType>
+
 #include <interfaces/icore.h>
 #include <interfaces/isourceformattercontroller.h>
 #include <interfaces/isourceformatter.h>
-#include "../duchain/sgmldefaultvisitor.h"
-#include "../duchain/parser/editorintegrator.h"
-#include "../duchain/parser/parsesession.h"
 
-#include "../language_debug.h"
 
 using namespace Xml;
 
@@ -71,18 +74,16 @@ public:
     virtual ~CompletionVisitor() {}
 
     virtual void visitAttribute(AttributeAst* node) {
-        kDebug(debugArea());
         if (!node || !node->name) return;
         attribute = node;
         DefaultVisitor::visitAttribute(node);
     }
 
     virtual void visitElementTag(ElementTagAst* node) {
-        kDebug(debugArea());
         if (!node || !node->name) return;
         attribute = 0;
         element = 0;
-        kDebug(debugArea()) << (int)node->endToken;
+        debug() << (int)node->endToken;
         if (editor->parseSession()->tokenStream()->token(node->endToken).kind == Parser::Token_GT
                 || (node->childrenSequence && node->childrenSequence->count() > 0)) {
             contextStack.push(node);
@@ -215,7 +216,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     session.setMime(KMimeType::mimeType(view->document()->mimeType()));
     StartAst *start=0;
     if (!session.parse(&start)) {
-        kDebug(debugArea()) << "Failed to parse content";
+        debug() << "Failed to parse content";
     }
     Xml::EditorIntegrator editor(&session);
     CompletionVisitor visitor(&editor);
@@ -223,24 +224,23 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     m_depth = visitor.contextStack.size();
     
     if (visitor.attribute) {
-        kDebug(debugArea()) << "# attribute" << visitor.nodeText(visitor.attribute->name);
+       debug() << "# attribute" << visitor.nodeText(visitor.attribute->name);
     } else {
-        kDebug(debugArea()) << "# attribute null";
+        debug() << "# attribute null";
     }
     if (visitor.context) {
-        kDebug(debugArea()) << "# context" << visitor.nodeText(visitor.context->name);
+        debug() << "# context" << visitor.nodeText(visitor.context->name);
     } else {
-        kDebug(debugArea()) << "# context null";
+        debug() << "# context null";
     }
     if (visitor.element) {
-        kDebug(debugArea()) << "# element" << visitor.nodeText(visitor.element->name);
+        debug() << "# element" << visitor.nodeText(visitor.element->name);
     } else {
-        kDebug(debugArea()) << "# element null";
+        debug() << "# element null";
     }
 
     if (tag.isEmpty() && esc.trimmed().isEmpty()) {
-        m_items.append(CompletionItem("<!DOCTYPE html>", 10, Other));
-        m_items.append(CompletionItem("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", 10, Other));
+        m_items.append(findHeadersForDocument(view->document()));
     }
 
     if (esc.endsWith('!') && tag.isEmpty()) {
@@ -271,7 +271,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     }
     //Complete tags
     else if(visitor.context) {
-        if((esc.endsWith("/") || esc.endsWith(">")) && !esc.endsWith("/>"))
+        if((esc.endsWith("/") || esc.endsWith(">")) && !esc.endsWith("/>") || esc.startsWith("</"))
             m_items.append(CompletionItem(QString("/%1").arg(visitor.contextName()), 10, Element));
         QHash<QString, CompletionItem> items;
         QList<CompletionItem> list = findChildElements(view->document(), range, visitor.contextName());
@@ -303,15 +303,13 @@ KTextEditor::Range SgmlCodeCompletionModel::completionRange(KTextEditor::View* v
     if ( text.isEmpty() || start.column() >= text.length() ) {
       return Range(start, end);
     }
-    while (start.column() >= 0 && !seps.contains(text.at(start.column()))) {
+    while (start.column() > 0 && !seps.contains(text.at(start.column()))) {
         start.setColumn(start.column()-1);
         if (seps.contains(text.at(start.column()))) {
             start.setColumn(start.column()+1);
             break;
         }
     }
-    if (start.column() < 0)
-        start.setColumn(0);
     while (end.column() < text.length() && !seps.contains(text.at(end.column()))) {
         end.setColumn(end.column()+1);
         if (seps.contains(text.at(end.column()))) {
@@ -319,8 +317,6 @@ KTextEditor::Range SgmlCodeCompletionModel::completionRange(KTextEditor::View* v
             break;
         }
     }
-    if (end.column() < 0)
-        end.setColumn(0);
     return Range(start, end);
 }
 
@@ -560,9 +556,9 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
             text = text.mid(1, text.size() -1);
         Range range = word;
         range = growRangeLeft(document, range, "</");
-        kDebug(debugArea()) << "right1" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
+        debug() << "right1" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
         range = growRangeRight(document, range, ">");
-        kDebug(debugArea()) << "right2" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
+        debug() << "right2" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
         if (trimmedLine.isEmpty()) {
             Range r = range;
             r.start().setColumn(0);
@@ -991,10 +987,10 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findAt
     QList<Declaration *> decs;
     TopDUContext * tc = 0;
     QHash< QString, CompletionItem > items;
-    kDebug(debugArea());
+    debug();
     tc = DUChain::self()->chainForDocument(document->url());
     if (!tc) {
-        kDebug(debugArea()) << "No top context";
+        debug() << "No top context";
         return items.values();
     }
 
@@ -1002,13 +998,13 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findAt
     if(name.isEmpty()) {
         ctx = tc->findContextAt(SimpleCursor(range.start()));
         if (!ctx) {
-            kDebug(debugArea()) << "No context";
+            debug() << "No context";
             return items.values();
         }
 
         dec = ctx->findDeclarationAt(SimpleCursor(range.start()));
         if (!dec) {
-            kDebug(debugArea()) << "No declaration";
+            debug() << "No declaration";
             return items.values();
         }
 
@@ -1077,6 +1073,37 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findCh
 
     return items.values();
 }
+
+QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findHeadersForDocument(Document* document) const
+{
+    KMimeType::Ptr mime = KMimeType::mimeType(document->mimeType());
+    QList< SgmlCodeCompletionModel::CompletionItem > items;
+    
+    if(mime->is("application/xhtml+xml") 
+        || mime->is("application/docbook+xml")
+        || mime->is("application/xml") 
+        || mime->is("application/xslt+xml") 
+        || mime->is("application/xsd")
+        || mime->is("application/wsdl+xml")
+        || mime->is("application/x-wsdl")) {
+            items.append(CompletionItem("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", 0, Header));
+    }
+    
+    if(mime->is("text/html")) {
+        items.append(CompletionItem("<!DOCTYPE html>", 0, Other));
+        items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">", 0, Header));
+        items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">", 0, Header));
+        items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\" \"http://www.w3.org/TR/html4/frameset.dtd\">", 0, Header));
+    }
+    
+    if(mime->is("application/docbook+xml")) {
+        items.append(CompletionItem("<!DOCTYPE book>", 10, Other));
+        items.append(CompletionItem("<!DOCTYPE book PUBLIC \"-//OASIS//DTD DocBook XML V4.5//EN\" \"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd\">", 0, Header));
+    }
+    
+    return items;
+}
+
 
 #include "sgmlcodecompletionmodel.moc"
 

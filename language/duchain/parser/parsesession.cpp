@@ -27,6 +27,7 @@
 #include "sgmltokenizer.h"
 #include "kdev-pg-memory-pool.h"
 #include "kdev-pg-token-stream.h"
+#include "../language_debug.h"
 
 #include <QFile>
 #include <QTextCodec>
@@ -38,7 +39,6 @@
 namespace Xml
 {
 
-#define debug() kDebug()
     
 ParseSession::ParseSession()
         :   m_debug(false),

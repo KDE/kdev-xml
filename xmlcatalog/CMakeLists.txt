@@ -5,6 +5,7 @@ set(KDEVXMLCATALOG_LIB_VERSION 1.0.0)
 set(KDEVXMLCATALOG_LIB_SOVERSION 1)
 
 set(kdevxmlcatalog_LIB_SRCS
+    catalog_debug.cpp
     cataloghelper.cpp
     documentcachemanager.cpp
     idocumentcachemanager.cpp

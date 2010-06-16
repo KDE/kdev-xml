@@ -375,16 +375,6 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             QString name = elementName(token);
             if (name.isEmpty()) return text;
 
-            int hasNewLine = 1;
-            QString indentStr = indentString(elements.size(), indent);
-            QString contentIndentStr = indentString(elements.size(), indent);
-            result << formatText(content, contentIndentStr, &hasNewLine);
-            if (!hasNewLine)
-                indentStr = "";
-            content = "";
-
-            result << formatTag(token, indentStr, contentIndentStr);
-
             //pop to parent
             if (elements.size() > 0)
                 while (elements.size() > 0
@@ -394,6 +384,16 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             if (!m_dtdHelper.emptyElement(name)) {
                 elements << name;
             }
+            
+            int hasNewLine = 1;
+            QString indentStr = indentString(elements.size() - 1, indent);
+            QString contentIndentStr = indentString(elements.size(), indent);
+            result << formatText(content, contentIndentStr, &hasNewLine);
+            if (!hasNewLine)
+                indentStr = "";
+            content = "";
+
+            result << formatTag(token, indentStr, contentIndentStr);
 
             //CDATA elements
             if (m_dtdHelper.cdataElement(name)) {

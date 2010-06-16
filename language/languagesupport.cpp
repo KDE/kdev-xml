@@ -70,45 +70,58 @@ LanguageSupport* LanguageSupport::self()
 
 QWidget* LanguageSupport::specialLanguageObjectNavigationWidget(const KUrl& url, const KDevelop::SimpleCursor& position)
 {
-/*
     KDevelop::TopDUContextPointer top;
-    {
-        KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
-        top = KDevelop::DUChain::self()->chainForDocument(url);
-        if (!top) { 
-            kDebug() << "No top context";
-            return 0;
-        }
-        KDevelop::Declaration * decl = itemUnderCursor(top.data(), position);
-        if (!decl) { 
+
+    KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
+    top = KDevelop::DUChain::self()->chainForDocument(url);
+    if (!top) {
+        kDebug() << "No top context";
+        return 0;
+    }
+
+    KDevelop::DUContext *context = top->findContext(position);
+    if (!context) {
+        context = top.data();
+    }
+
+    if (!context) {
+        kDebug() << "No context";
+        return 0;
+    }
+
+    KDevelop::Declaration *decl = context->findDeclarationAt(position);
+    if (!decl) {
+        //In Xsd and xml some declarations may appear in the wrong context ranges
+        if (context->parentContext())
+            decl = context->parentContext()->findDeclarationAt(position);
+        if (!decl) {
             kDebug() << "No declaration for cursor";
             return 0;
         }
-        return new NavigationWidget(KDevelop::DeclarationPointer(decl), top);
     }
-*/
-    return KDevelop::ILanguageSupport::specialLanguageObjectNavigationWidget(url, position);
+
+    return new NavigationWidget(KDevelop::DeclarationPointer(decl), top);
 }
 
 KDevelop::SimpleRange LanguageSupport::specialLanguageObjectRange(const KUrl& url, const KDevelop::SimpleCursor& position)
 {
-/*
-    KDevelop::TopDUContextPointer top;
-    {
-        KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
-        top = KDevelop::DUChain::self()->chainForDocument(url);
-        if (!top) { 
-            kDebug() << "No top context";
-            return KDevelop::SimpleRange::invalid();
+    /*
+        KDevelop::TopDUContextPointer top;
+        {
+            KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
+            top = KDevelop::DUChain::self()->chainForDocument(url);
+            if (!top) {
+                kDebug() << "No top context";
+                return KDevelop::SimpleRange::invalid();
+            }
+            KDevelop::Declaration * decl = KDevelop::DUChainUtils::itemUnderCursor(url, position);
+            if (!decl) {
+                kDebug() << "No declaration for cursor";
+                return KDevelop::SimpleRange::invalid();
+            }
+            return decl->range();
         }
-        KDevelop::Declaration * decl = KDevelop::DUChainUtils::itemUnderCursor(url, position);
-        if (!decl) { 
-            kDebug() << "No declaration for cursor";
-            return KDevelop::SimpleRange::invalid();
-        }
-        return decl->range();
-    }
-*/
+    */
     return KDevelop::ILanguageSupport::specialLanguageObjectRange(url, position);
 }
 

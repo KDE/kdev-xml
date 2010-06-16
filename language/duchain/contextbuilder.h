@@ -30,7 +30,7 @@ namespace Xml
 class EditorIntegrator;
 class ParseSession;
 
-typedef KDevelop::AbstractContextBuilder<AstNode, ElementAst> ContextBuilderBase;
+typedef KDevelop::AbstractContextBuilder<AstNode, IdentifierAst> ContextBuilderBase;
 
 /** Builder for XML SGML and DTD
  *  Sgml is case insensitive, therefor all Indentifiers is in lower case, but ElementDeclaration has
@@ -40,13 +40,17 @@ typedef KDevelop::AbstractContextBuilder<AstNode, ElementAst> ContextBuilderBase
  */
 class KDEVSGMLDUCHAIN_EXPORT ContextBuilder: public ContextBuilderBase, public AbstractBuilder
 {
-
 public:
     ContextBuilder();
 
     virtual ~ContextBuilder();
 
+    virtual KDevelop::ReferencedTopDUContext build(const KDevelop::IndexedString& url, AstNode* node, KDevelop::ReferencedTopDUContext updateContext = KDevelop::ReferencedTopDUContext(), bool useSmart = true);
+
 protected:
+    EditorIntegrator* editor() const;
+    void setEditor(EditorIntegrator * editor);
+
     virtual void startVisiting(AstNode* node);
     virtual void visitElementTag(ElementTagAst* node);
     virtual void visitAttribute(AttributeAst* node);
@@ -56,24 +60,26 @@ protected:
     virtual void visitDtdEntityInclude(DtdEntityIncludeAst* node);
     virtual KDevelop::DUContext* contextFromNode(AstNode* node);
     virtual KTextEditor::Range editorFindRange(AstNode* fromNode, AstNode* toNode);
-    virtual KDevelop::QualifiedIdentifier identifierForNode(ElementAst* node);
+    virtual KDevelop::QualifiedIdentifier identifierForNode(IdentifierAst* node);
     virtual void setContextOnNode(AstNode* node, KDevelop::DUContext* context);
     virtual KDevelop::TopDUContext* newTopContext(const KDevelop::SimpleRange& range, KDevelop::ParsingEnvironmentFile* file = 0);
     virtual KDevelop::SimpleCursor findElementChildrenReach(ElementTagAst* node);
 
+    KDevelop::SimpleRange nodeRange(AstNode *node) const;
     QString nodeText(AstNode *node) const;
     QString tokenText(qint64 begin, qint64 end) const;
     QString tagName(const ElementTagAst *ast) const;
     QString tagName(const ElementCloseTagAst *ast) const;
-    
+
     void setStdElementId(const KDevelop::QualifiedIdentifier & id) {
         m_dtdElementId = id;
     }
-    
+
     KDevelop::QualifiedIdentifier m_dtdElementId;
-    
+
     virtual void reportProblem(KDevelop::ProblemData::Severity, AstNode* ast, const QString& message);
 
+    bool m_mapAst;
 };
 }
 

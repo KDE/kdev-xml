@@ -23,6 +23,7 @@
 #include "declarationbuilder.h"
 #include "includebuilder.h"
 #include "editorintegrator.h"
+#include "language_debug.h"
 
 #include <xmlcatalog/icatalogmanager.h>
 #include <xmlcatalog/catalogmanager.h>
@@ -34,7 +35,6 @@
 #include <QtCore/QReadLocker>
 #include <QtCore/QThread>
 
-#include <kdebug.h>
 #include <KMimeType>
 
 #include <interfaces/ilanguage.h>
@@ -46,19 +46,18 @@
 #include <language/backgroundparser/urlparselock.h>
 #include <language/duchain/duchainutils.h>
 
-#include "language_debug.h"
 
 namespace Xml
 {
 
 ParseJob::ParseJob(const KUrl& url) : KDevelop::ParseJob(url)
 {
-    kDebug(debugArea());
+    debug();
 }
 
 ParseJob::~ParseJob()
 {
-    kDebug(debugArea());
+    debug();
 }
 
 void ParseJob::run()
@@ -77,13 +76,13 @@ void ParseJob::run()
             }
         }
         if (!needsUpdate) {
-            kDebug(debugArea()) << "Already up to date" << document().str();
+            debug() << "Already up to date" << document().str();
             cleanupSmartRevision();
             return;
         }
     }
 
-    kDebug(debugArea()) << "Parsing:" << document().str();
+    debug() << "Parsing:" << document().str();
     //Dont include yourself
     m_includes.insert(document().str(), QString::null);
 
@@ -101,11 +100,11 @@ void ParseJob::run()
     
     StartAst *start=0;
     if (!session.parse(&start)) {
-        kDebug() << "Failed to parse:" << document().str();
+        debug() << "Failed to parse:" << document().str();
     }
  
     //Build
-    kDebug(debugArea()) << "Building:" << document().str();
+    debug() << "Building:" << document().str();
     KDevelop::ReferencedTopDUContext top;
     {
         KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
@@ -113,14 +112,14 @@ void ParseJob::run()
     }
  
     if (top) {
-        kDebug(debugArea()) << "Re-compiling:" << document().str();
+        debug() << "Re-compiling:" << document().str();
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
         top->clearImportedParentContexts();
         if (top->parsingEnvironmentFile())
             top->parsingEnvironmentFile()->clearModificationRevisions();
         top->clearProblems();
     } else {
-        kDebug(debugArea()) << "Compiling:" << document().str();
+        debug() << "Compiling:" << document().str();
     }
     
     QList<KDevelop::ProblemPointer> problems;
@@ -166,6 +165,7 @@ void ParseJob::run()
     }
 
     cleanupSmartRevision();
+    
     /*
     {
         KDevelop::DUChainReadLocker loc;
@@ -185,7 +185,7 @@ void ParseJob::run()
 void ParseJob::visit(KDevelop::Declaration* d)
 {
     if (!d) return;
-    kDebug(debugArea()) << d->qualifiedIdentifier().toString();
+    debug() << d->qualifiedIdentifier().toString();
     if (d->internalContext()) {
         foreach(KDevelop::Declaration *d1 , d->internalContext()->localDeclarations()) {
             visit(d1);

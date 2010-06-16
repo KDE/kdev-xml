@@ -28,6 +28,7 @@ set( parser_SRCS
 )
 
 set(parser_STAT_SRCS
+    ../language_debug.cpp
     parser/tokenizer.cpp
     parser/sgmltokenizer.cpp
     parser/dtdtokenizer.cpp

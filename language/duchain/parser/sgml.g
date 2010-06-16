@@ -230,13 +230,15 @@ namespace KDevelop
     TEXT
 ->  text ;;
 
+    TEXT
+->  identifier ;;
 
     TEXT
 ->  elementText ;;
 
 
     --NOTE safe but irritating FIRST/FIRST conflict
-    (?[: LA(2).kind == Token_COLON :] (ns=text COLON name=text) | (name=text)) maybeWhites
+    (?[: LA(2).kind == Token_COLON :] (ns=identifier COLON name=identifier) | (name=identifier)) maybeWhites
     (
         EQUAL maybeWhites
         (
@@ -260,34 +262,44 @@ namespace KDevelop
     --      </child2>          * will correctly pop to child2
 
     topen=LT maybeWhites
-    (?  [: LA(2).kind == Token_COLON :] (ns=text COLON name=text)
-        | (name=text)
+    (?  [: LA(2).kind == Token_COLON :] (ns=identifier COLON name=identifier)
+        | (name=identifier)
         | 0 [: reportProblem(Error, "Expected element name"); :]
     ) maybeWhites
     (#attributes=attribute maybeWhites)*
     (
         tclose=CLOSE [: while(!m_stack.empty() && !m_dtdHelper.hasChild(tagName(m_stack.top()), tagName(*yynode))) m_stack.pop(); :]
-        | tclose=GT [: m_stack.push(*yynode); :] (#children=element [: if(m_stack.empty() || m_stack.top() != *yynode) break; :])*
+        | tclose=GT 
+            [: 
+                //TODO still broken not working as should, m_stack is fine but the children is still added to the wrong element
+                bool thisIsNotYourChildThief = false;
+                while(!m_stack.empty() 
+                    && m_dtdHelper.closeOptional(tagName(m_stack.top())) 
+                    && !m_dtdHelper.hasChild(tagName(m_stack.top()), tagName(*yynode))
+                    && (thisIsNotYourChildThief = true))
+                    m_stack.pop();
+                m_stack.push(*yynode);
+            :] ([: /*if(thisIsNotYourChildThief) break;*/ :] #children=element [: if(!m_stack.empty() && m_stack.top() != *yynode) break; :])*
         | 0 [: reportProblem(Error, "Unclosed element"); :]
     )
 ->  elementTag ;;
 
 
     topen=CLOSE maybeWhites
-    (?  [: LA(2).kind == Token_COLON :] (ns=text COLON name=text)
-        | (name=text)
+    (?  [: LA(2).kind == Token_COLON :] (ns=identifier COLON name=identifier)
+        | (name=identifier)
         | 0 [: reportProblem(Error, "Expected element name"); :]
     ) maybeWhites
     (
         tclose=GT [:
-                    QString tagNameStr = tagName(*yynode);
+                    QString tagNameStr = tagName(*yynode).toLower();
                     if(m_dtdHelper.emptyElement(tagNameStr))
                         reportProblem(Error, "Empty element: no content/close tag expected");
                     else {
-                        while(!m_stack.empty() && tagName(m_stack.top()) != tagNameStr) m_stack.pop();
+                        while(!m_stack.empty() && tagName(m_stack.top()).toLower() != tagNameStr) m_stack.pop();
                         if(m_stack.empty())
                             reportProblem(Error, "Close tag without start");
-                        if(!m_stack.empty() && tagName(m_stack.top()) == tagNameStr)  m_stack.pop();
+                        if(!m_stack.empty() && tagName(m_stack.top()).toLower() == tagNameStr)  m_stack.pop();
                     }
                   :]
         | 0 [: reportProblem(Error, "Unclosed element"); :]
@@ -353,7 +365,7 @@ namespace KDevelop
 
     (
         NUMBER type=text
-        | name=text 
+        | name=identifier 
         | dtdUnknownEntity
         | ?[:{
             int i=1;
@@ -373,7 +385,7 @@ namespace KDevelop
 ->  dtdElementList ;;
 
 
-    name=text whites
+    name=identifier whites
     (
         OPAREN maybeWhites #enum=dtdEnumItem @ dtdChoiceSep maybeWhites CPAREN maybeWhites
         ( 
@@ -403,7 +415,7 @@ namespace KDevelop
 
     topen=ATTLIST whites
     (
-        (name=text | dtdUnknownEntity)
+        (name=identifier | dtdUnknownEntity)
         | OPAREN maybeWhites #elements=dtdEnumItem @ dtdChoiceSep maybeWhites CPAREN
         | 0 [: reportProblem(Error, "Expected element name or list"); :]
     )
@@ -415,7 +427,7 @@ namespace KDevelop
 
     topen=ENTITY whites
     (
-        (persent=PERCENT maybeWhites | 0 [: (*yynode)->persent=0; :] ) name=text  maybeWhites
+        (persent=PERCENT maybeWhites | 0 [: (*yynode)->persent=0; :] ) name=identifier  maybeWhites
         (
             PUBLIC maybeWhites QUOTE publicId=text QUOTE maybeWhites (SYSTEM maybeWhites | 0) (QUOTE systemId=text QUOTE| 0)
             | SYSTEM maybeWhites (QUOTE systemId=text QUOTE | 0)
@@ -432,7 +444,7 @@ namespace KDevelop
 
 
     topen=NOTATION maybeWhites
-    name=text maybeWhites
+    name=identifier maybeWhites
     (
         PUBLIC maybeWhites QUOTE publicId=text QUOTE maybeWhites (SYSTEM maybeWhites | 0) (QUOTE systemId=text QUOTE| 0)
         | SYSTEM maybeWhites (QUOTE systemId=text QUOTE | 0)
@@ -442,17 +454,17 @@ namespace KDevelop
     ( tclose=GT | 0 [: reportProblem(Error, "Unclosed element"); :] )
 ->  dtdNotation ;;
 
-    PERCENT name=text ( SEMICOLON | 0 )
+    PERCENT name=identifier ( SEMICOLON | 0 )
 ->  dtdEntityInclude ;;
 
     topen=ELEMENT whites
     (
-        (name=text | dtdUnknownEntity)
+        (name=identifier | dtdUnknownEntity)
         | OPAREN maybeWhites #elements=dtdEnumItem @ dtdChoiceSep maybeWhites CPAREN
         | 0 [: reportProblem(Error, "Expected element name or list"); :]
     )
     maybeWhites
-    ((openTag=HYPHEN | openTag=OPT) whites (closeTag=HYPHEN | closeTag=OPT) | dtdUnknownEntity | 0)
+    ((openTag=HYPHEN | openTag=OPT) whites (closeTag=HYPHEN | closeTag=OPT) | dtdUnknownEntity | 0 [: (*yynode)->closeTag=0; :])
     maybeWhites
     (
         content=text 
@@ -501,7 +513,7 @@ namespace KDevelop
 ->  dtdCondition ;;
 
     topen=DOCTYPE maybeWhites
-    name=text maybeWhites
+    name=identifier maybeWhites
     (PUBLIC maybeWhites QUOTE publicId=maybeText QUOTE maybeWhites (SYSTEM maybeWhites | 0) (QUOTE systemId=maybeText QUOTE | 0) | 0)
     (SYSTEM maybeWhites QUOTE systemId=maybeText QUOTE | 0)
     maybeWhites

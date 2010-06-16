@@ -17,19 +17,127 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "navigationwidget.h"
 #include <language/duchain/declaration.h>
+#include <language/duchain/duchainlock.h>
+#include <language/duchain/duchain.h>
+#include <elementdeclaration.h>
+#include <KLocalizedString>
+#include <language/duchain/navigation/abstractdeclarationnavigationcontext.h>
+#include <language/duchain/namespacealiasdeclaration.h>
 
 using namespace Xml;
 using namespace KDevelop;
 
 class DeclarationNavigationContext : public AbstractNavigationContext {
 public:
-    DeclarationNavigationContext(KDevelop::DeclarationPointer declaration, KDevelop::TopDUContextPointer topContext) {
+    DeclarationNavigationContext(KDevelop::DeclarationPointer declaration, KDevelop::TopDUContextPointer topContext) : 
+    AbstractNavigationContext(topContext, 0) {
         m_declaration = declaration;
         m_topContext = topContext;
     }
-    QString name() const {
-        return m_declaration->qualifiedIdentifier().toString();
+
+    virtual QString name() const {
+        KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
+        ElementDeclaration *element = dynamic_cast<ElementDeclaration *>(m_declaration.data());
+        if(!element) {
+            return m_declaration->identifier().toString();
+        }
+        return element->name();
     }
+
+    virtual QString html(bool shorten = false) {
+        KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
+
+        if(m_declaration->kind() == KDevelop::Declaration::Namespace) {
+            modifyHtml() += QString("<b>%1:</b> %2").arg(i18n("Namespace"), m_declaration->identifier().toString());
+            return currentHtml();
+        }
+        
+        if(m_declaration->kind() == KDevelop::Declaration::NamespaceAlias) {
+            KDevelop::NamespaceAliasDeclaration *dec = dynamic_cast<KDevelop::NamespaceAliasDeclaration *>(m_declaration.data());
+            if(!dec) {
+                modifyHtml() += i18n("Unable to resolve");
+                return currentHtml();
+            }
+            QString ns = dec->importIdentifier().toString();
+            modifyHtml() += QString("<b>%1:</b> %2").arg(i18n("Namespace"), ns);
+            return currentHtml();
+        }
+
+        if(m_declaration->kind() == KDevelop::Declaration::Import) {
+            QString file = m_declaration->identifier().toString();
+            modifyHtml() +=QString("<b>%1:</b> %2").arg(i18n("Import"), file);
+            //makeLink(file, m_declaration, NavigationAction::JumpToSource);
+            return currentHtml();
+        }
+
+        ElementDeclaration *element = dynamic_cast<ElementDeclaration *>(m_declaration.data());
+        if(!element) {
+            modifyHtml() += i18n("Unable to resolve");
+            return currentHtml();
+        }
+
+        QString name = element->name();
+        modifyHtml() += i18n("Path:") + "&nbsp;";
+        KDevelop::DUContext *c = element->context();
+        QList<ElementDeclaration *> decl;
+        while(c && c->owner()) {
+            ElementDeclaration *e = dynamic_cast<ElementDeclaration *>(c->owner());
+            if(e) decl << e;
+            c = c->owner()->context();
+        }
+        modifyHtml() += QString("/");
+        for(int i = decl.size() -1; i > -1; --i) {
+            makeLink(decl[i]->name(), KDevelop::DeclarationPointer(decl[i]), NavigationAction::JumpToSource);
+            modifyHtml() += QString("/");
+        }
+        modifyHtml() += nameHighlight(Qt::escape(name));
+        modifyHtml() += "<br/>";
+
+        QList<KDevelop::Declaration *> declarations = element->context()->topContext()->findDeclarations(element->identifier());
+        ElementDeclaration * typeDec = 0;
+        foreach(KDevelop::Declaration * dec, declarations) {
+            if(dec->kind() == KDevelop::Declaration::Type) {
+                typeDec = dynamic_cast<ElementDeclaration *>(dec);
+                if(typeDec)
+                    break;
+            }
+        }
+        if(typeDec) {
+            if(!typeDec->closeTagRequired())
+                modifyHtml() += i18n("Close tag: optional") + "<br/>";
+            if(!typeDec->contentType().isEmpty())
+                modifyHtml() += i18n("Content type: ") + Qt::escape(typeDec->contentType()) + "<br/>";
+            if(!typeDec->content().isEmpty())
+                modifyHtml() += i18n("Content: ") + Qt::escape(typeDec->content()) + "<br/>";
+            if(typeDec->attributesSize() > 0) {
+                modifyHtml() += propertyHighlight(i18n("Attributes:&nbsp;"));
+                for(int i = 0; i < typeDec->attributesSize(); i++) {
+                    if(i < typeDec->attributesSize() - 1)
+                        modifyHtml() += typeDec->attributes()[i].str() + ",&nbsp;";
+                    else
+                        modifyHtml() += typeDec->attributes()[i].str() + " ";
+                }
+                modifyHtml() += "<br/>";
+            }
+            if(typeDec->internalContext()) {
+                QVector<KDevelop::Declaration *> declarations = typeDec->internalContext()->localDeclarations();
+                    if(declarations.size() > 0) {
+                    modifyHtml() += propertyHighlight(i18n("Children:&nbsp;"));
+                    for(int i = 0; i < declarations.size(); i++) {
+                        if(declarations[i] && declarations[i]->kind() == KDevelop::Declaration::Instance) {
+                            if(i < declarations.size() - 1)
+                                modifyHtml() += declarations[i]->identifier().toString() + ",&nbsp;";
+                            else
+                                modifyHtml() += declarations[i]->identifier().toString() + " ";
+                        }
+                    }
+                }
+            }
+        }
+        modifyHtml() += " ";
+        return currentHtml();
+    }
+
 protected:
     KDevelop::DeclarationPointer m_declaration;
     KDevelop::TopDUContextPointer m_topContext;
@@ -38,9 +146,9 @@ protected:
 NavigationWidget::NavigationWidget(KDevelop::DeclarationPointer declaration, KDevelop::TopDUContextPointer topContext)
 {
     m_topContext = topContext;
-
-    initBrowser(100);
+    m_declaration = declaration;
+    initBrowser(50);
     //The first context is registered so it is kept alive by the shared-pointer mechanism
-    m_startContext = NavigationContextPointer(new DeclarationNavigationContext(declaration, m_topContext));
+    m_startContext = NavigationContextPointer(new DeclarationNavigationContext(declaration, topContext));
     setContext(m_startContext);
 }

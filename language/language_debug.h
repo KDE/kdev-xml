@@ -19,13 +19,9 @@
 #define LANGUAGE_DEBUG_H
 
 #include <KDebug>
-namespace Xml {
 
-int debugArea() {
-  static int s_area = KDebug::registerArea("kdevsgmllanguage");
-  return s_area;
-}
+namespace Xml { extern int debugArea(); }
 
-}
+#define debug() kDebug(Xml::debugArea())
 
 #endif // LANGUAGE_DEBUG_H

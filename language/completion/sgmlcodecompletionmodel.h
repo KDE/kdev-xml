@@ -56,6 +56,7 @@ protected:
         Element,
         Attribute,
         Entity,
+        Header,
         Enum
     };
     
@@ -88,7 +89,8 @@ protected:
     QList< CompletionItem > findAttributes(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &element = QString()) const;
     QList< CompletionItem > findAll(KTextEditor::Document* document, const KTextEditor::Range& range) const;
     QList< CompletionItem > findAllEntities(KTextEditor::Document* document, const KTextEditor::Range& range) const;
-
+    QList< CompletionItem > findHeadersForDocument(KTextEditor::Document *document) const;
+    
     const QIcon getIcon ( CompletionItemType type ) const;
     
     /** @todo get users indentation profile */

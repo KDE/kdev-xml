@@ -22,6 +22,7 @@
 #include <oasiscatalogreaderwriter.h>
 #include <oasiscatalog.h>
 #include <publicid.h>
+#include <KDebug>
 
 class testOASISCatalog : public QObject {
     Q_OBJECT
@@ -75,7 +76,9 @@ void testOASISCatalog::testURN() {
 
 void testOASISCatalog::testManager()
 {
-
+    ICatalogManager::self()->addCatalog("/home/ruan/kdevelop/share/apps/kdevxmlcatalog/catalogs/HTML.xml");
+    kDebug() << ICatalogManager::self()->resolveDoctype("html");
+    kDebug() << ICatalogManager::self()->resolve("-//W3C//DTD HTML 4.01 Transitional//EN", QString());
 }
 
 void testOASISCatalog::testAddEntry()

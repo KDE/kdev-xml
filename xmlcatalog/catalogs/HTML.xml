@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
   <doctype name="HTML" uri="http://www.w3.org/TR/html4/loose.dtd" />
-  <public publicId="-//W3C//DTD HTML 4.0 Transitional//EN" uri="http://www.w3.org/TR/html4/loose.dtd" />
+  <public publicId="-//W3C//DTD HTML 4.01 Transitional//EN" uri="http://www.w3.org/TR/html4/loose.dtd" />
   <public publicId="-//W3C//DTD HTML 4.01//EN" uri="http://www.w3.org/TR/html4/strict.dtd" />
   <public publicId="-//W3C//DTD HTML 4.01 Frameset//EN" uri="http://www.w3.org/TR/html4/frameset.dtd" />
   <public publicId="-//W3C//ENTITIES Symbols//EN//HTML" uri="http://www.w3.org/TR/html4/HTMLsymbol.ent" />

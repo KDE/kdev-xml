@@ -20,6 +20,7 @@ include_directories(
 )
 set(kdevsgmllanguagesupport_PART_SRCS
     languagesupport.cpp
+    language_debug.cpp
     parsejob.cpp
 )
 

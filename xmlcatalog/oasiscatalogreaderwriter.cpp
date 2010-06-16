@@ -18,13 +18,12 @@
 #include "oasiscatalogreaderwriter.h"
 #include "oasiscatalog.h"
 #include "publicid.h"
+#include "catalog_debug.h"
 
 #include <QtCore/QFile>
 
 #include <KDE/KUrl>
 #include <KDE/KDebug>
-
-#define debug() kDebug()
 
 #define SCC static const char *
 #define SCCI const char * OASISCatalogReaderWriter::

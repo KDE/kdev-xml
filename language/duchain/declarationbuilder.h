@@ -48,7 +48,7 @@ typedef KDevelop::AbstractDeclarationBuilder<AstNode, ElementAst, ContextBuilder
 class KDEVSGMLDUCHAIN_EXPORT DeclarationBuilder : public DeclarationBuilderBase
 {
 public:
-    DeclarationBuilder(KDevelop::EditorIntegrator* editor);
+    DeclarationBuilder(EditorIntegrator* editor);
     ~DeclarationBuilder();
 
     virtual void visitElementTag(ElementTagAst* node);
@@ -60,30 +60,27 @@ public:
     virtual void visitDtdAttlist(DtdAttlistAst* node);
     virtual void visitDtdEntity(DtdEntityAst* node);
     virtual void visitDtdEntityInclude(DtdEntityIncludeAst* node);
-    //virtual void visitElementPHP(ElementPHPAst* node);
     virtual void visitElementPCDATA(ElementPCDATAAst* node);
     virtual void visitElementCDATA(ElementCDATAAst* node);
     virtual void visitElementText(ElementTextAst* node);
-    virtual void visitElementProcessing(ElementProcessingAst* node);
-    //virtual void visitElementSource(ElementSourceAst* node);
     virtual void closeDeclaration();
 
 protected:
-    virtual KDevelop::QualifiedIdentifier identifierForNode( ElementTagAst* node );
+    
     ElementDeclaration* createClassInstanceDeclaration(const QString &identifier,
                                         const KDevelop::SimpleRange &range,
                                         ElementDeclarationData::ElementType type,
                                         const QString &nameSpacePrefix = QString());
 
-    void createImportDeclaration(const QString &identifier,
-                                 const KDevelop::SimpleRange &range,
-                                 const KUrl &url);
+    KDevelop::Declaration *createImportDeclaration(const QString &identifier,
+                                                   const KDevelop::SimpleRange &range,
+                                                   const KUrl &url);
     QHash<QString, QString> m_dtdElementExclude;
 
     /** Keeps a list of defined elements
-     *  Used in visitDtdAttlist.
-     */
+     *  Used in visitDtdAttlist. */
     QHash<QString, ElementDeclaration*> m_dtdElements;
+    QHash<QString, KDevelop::Declaration *> m_nameSpaceAliases;
 };
 
 }

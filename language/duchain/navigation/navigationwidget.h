@@ -30,7 +30,7 @@ class KDEVSGMLDUCHAIN_EXPORT NavigationWidget : public KDevelop::AbstractNavigat
 {
 public:
     NavigationWidget(KDevelop::DeclarationPointer declaration, KDevelop::TopDUContextPointer topContext);
-
+    
 protected:
     KDevelop::DeclarationPointer m_declaration;
 };

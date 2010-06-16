@@ -18,9 +18,9 @@
 
 #include "oasiscatalog.h"
 #include "publicid.h"
+#include "catalog_debug.h"
 
 #include <KDE/KUrl>
-#include <KDE/KDebug>
 #include <KDE/KMessageBox>
 
 const QString OASISCatalogContainer::PreferSystem = "system";
