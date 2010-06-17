@@ -253,39 +253,34 @@ KDevelop::SimpleRange ContextBuilder::nodeRange(AstNode* node) const
 
 QString ContextBuilder::nodeText(AstNode *node) const
 {
-    if (!node) return QString();
-    EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
-    return tokenText(e->parseSession()->tokenStream()->token(node->startToken).begin, e->parseSession()->tokenStream()->token(node->endToken).end);
+    return editor()->parseSession()->symbol(node);
 }
 
 QString ContextBuilder::tokenText(qint64 begin, qint64 end) const
 {
-    EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
-    return e->parseSession()->contents().mid(begin, end - begin + 1);
+    return editor()->parseSession()->contents().mid(begin, end - begin + 1);
 }
 
 QString ContextBuilder::tagName(const ElementTagAst *ast) const
 {
-    EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
+    //NOTE: if that gets commented out, use the simpler code as shown below
     //if (ast->ns && ast->name)
     //    return tokenText(e->parseSession()->tokenStream()->token(ast->ns->startToken).begin, e->parseSession()->tokenStream()->token(ast->ns->endToken).end) +
     //           ":" +
     //           tokenText(e->parseSession()->tokenStream()->token(ast->name->startToken).begin, e->parseSession()->tokenStream()->token(ast->name->endToken).end);
-    if (ast->name)
-        return tokenText(e->parseSession()->tokenStream()->token(ast->name->startToken).begin, e->parseSession()->tokenStream()->token(ast->name->endToken).end);
-    return QString();
+
+    return editor()->parseSession()->symbol(ast->name);
 }
 
 QString ContextBuilder::tagName(const ElementCloseTagAst *ast) const
 {
-    EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
+    //NOTE: if that gets commented out, use the simpler code as shown below
     //if (ast->ns && ast->name)
     //    return tokenText(e->parseSession()->tokenStream()->token(ast->ns->startToken).begin, e->parseSession()->tokenStream()->token(ast->ns->endToken).end) +
     //            ":" +
     //            tokenText(e->parseSession()->tokenStream()->token(ast->name->startToken).begin, e->parseSession()->tokenStream()->token(ast->name->endToken).end);
-    if (ast->name)
-        return tokenText(e->parseSession()->tokenStream()->token(ast->name->startToken).begin, e->parseSession()->tokenStream()->token(ast->name->endToken).end);
-    return QString();
+
+    return editor()->parseSession()->symbol(ast->name);
 }
 
 void ContextBuilder::reportProblem(KDevelop::ProblemData::Severity , AstNode* ast, const QString& message)
