@@ -133,9 +133,8 @@ public:
 
     QString nodeText(AstNode *node) const
     {
-        if (!node) return QString();
         if (!editor) return QString();
-        return tokenText(editor->parseSession()->tokenStream()->token(node->startToken).begin, editor->parseSession()->tokenStream()->token(node->endToken).end);
+        return editor->parseSession()->symbol(node);
     }
 
     QString tokenText(qint64 begin, qint64 end) const

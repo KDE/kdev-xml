@@ -233,22 +233,17 @@ void ContextBuilder::visitDtdElement(DtdElementAst* node)
 
 KDevelop::SimpleCursor ContextBuilder::findElementChildrenReach(ElementTagAst* node)
 {
-    EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
     if (node->childrenSequence) {
         ElementAst *ast = node->childrenSequence->back()->element;
         if (ast->element && ast->element->kind == AstNode::ElementCloseTagKind)
-            return e->findPosition(ast->endToken, EditorIntegrator::BackEdge);
+            return editor()->findPosition(ast->endToken, EditorIntegrator::BackEdge);
     }
-    return e->findPosition(node->endToken, EditorIntegrator::BackEdge);
+    return editor()->findPosition(node->endToken, EditorIntegrator::BackEdge);
 }
 
 KDevelop::SimpleRange ContextBuilder::nodeRange(AstNode* node) const
 {
-    EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
-    KDevelop::SimpleRange range;
-    range.start = e->findPosition(node->startToken, EditorIntegrator::FrontEdge);
-    range.end = e->findPosition(node->endToken, EditorIntegrator::BackEdge);
-    return range;
+    return editor()->findRange(node);
 }
 
 QString ContextBuilder::nodeText(AstNode *node) const
@@ -285,12 +280,11 @@ QString ContextBuilder::tagName(const ElementCloseTagAst *ast) const
 
 void ContextBuilder::reportProblem(KDevelop::ProblemData::Severity , AstNode* ast, const QString& message)
 {
-    EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
     KDevelop::Problem *p = new KDevelop::Problem();
     p->setSource(KDevelop::ProblemData::Parser);
     p->setSeverity(KDevelop::ProblemData::Error);
     p->setDescription(message);
-    KDevelop::SimpleRange range = e->findRange(ast);
-    p->setFinalLocation(KDevelop::DocumentRange(e->currentUrl().str(), KTextEditor::Range(range.start.line, range.start.column, range.end.line, range.end.column)));
+    KDevelop::SimpleRange range = editor()->findRange(ast);
+    p->setFinalLocation(KDevelop::DocumentRange(editor()->currentUrl().str(), KTextEditor::Range(range.start.line, range.start.column, range.end.line, range.end.column)));
     m_problems << KDevelop::ProblemPointer(p);
 }
