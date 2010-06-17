@@ -128,16 +128,19 @@ void ContextBuilder::visitAttribute(AttributeAst* node)
     IncludeIdentifier incid;
     if (node->ns && node->value && nodeText(node->ns) == "xmlns") {
         incid.uri = KDevelop::IndexedString(nodeText(node->value));
-    } else if (node->name && node->value && nodeText(node->name) == "xmlns") {
+    } else if (node->name && node->value) {
+      const QString attr = nodeText(node->name);
+      if (attr == "xmlns") {
         incid.uri = KDevelop::IndexedString(nodeText(node->value));
-    } else if (node->name && node->value && nodeText(node->name) == "schemaLocation") {
+      } else if (attr == "schemaLocation") {
         QStringList values = nodeText(node->value).split(QRegExp("\\s+"));
         for (int i = 0; i < values.length() && values.length()%2==0; i+=2) {
             incid.systemId = KDevelop::IndexedString(values[i+1]);
             incid.uri = KDevelop::IndexedString(values[i]);
         }
-    } else if (node->name && node->value && nodeText(node->name) == "noNamespaceSchemaLocation") {
+      } else if (attr == "noNamespaceSchemaLocation") {
         incid.systemId = KDevelop::IndexedString(nodeText(node->value));
+      }
     }
     if (!incid.isNull()) {
         KUrl url = CatalogHelper::resolve(QString(),
