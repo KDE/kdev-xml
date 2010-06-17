@@ -375,6 +375,7 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
                 //closeDeclaration();
             } else {
                 KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString("unresolved")));
+                KDevelop::DUChainWriteLocker lock;
                 KDevelop::Declaration *dec = openDeclaration<KDevelop::Declaration>(id,range);
                 dec->setKind(KDevelop::Declaration::Instance);
                 closeDeclaration();
