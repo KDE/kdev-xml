@@ -138,6 +138,9 @@ QString ParseSession::symbol(qint64 token) const
 
 QString ParseSession::symbol(AstNode* node) const
 {
+    if (!node) {
+      return QString();
+    }
     const KDevPG::TokenStream::Token& startTok = m_tokenStream->token(node->startToken);
     const KDevPG::TokenStream::Token& endTok = m_tokenStream->token(node->endToken);
     return m_contents.mid(startTok.begin, endTok.end - startTok.begin + 1);
