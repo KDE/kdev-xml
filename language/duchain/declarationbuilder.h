@@ -52,6 +52,7 @@ public:
     ~DeclarationBuilder();
 
     virtual void visitElementTag(ElementTagAst* node);
+    virtual void visitElementCloseTag(ElementCloseTagAst* node);
     virtual void visitAttribute(AttributeAst* node);
     virtual void visitDtdDoctype(DtdDoctypeAst* node);
     virtual void visitDtdElement(DtdElementAst* node);
@@ -66,21 +67,47 @@ public:
     virtual void closeDeclaration();
 
 protected:
-    
-    ElementDeclaration* createClassInstanceDeclaration(const QString &identifier,
-                                        const KDevelop::SimpleRange &range,
-                                        ElementDeclarationData::ElementType type,
-                                        const QString &nameSpacePrefix = QString());
 
+    /** Creates an element instance declaration
+     *  @note The chain must be unlocked
+     */
+    ElementDeclaration* createClassInstanceDeclaration(const QString &identifier,
+            const KDevelop::SimpleRange &range,
+            ElementDeclarationData::ElementType type,
+            const QString &nsPrefix = QString());
+
+    /** Creates an alias declaration
+     *  @note The chain must be unlocked
+     */
+    KDevelop::Declaration * createAliasDeclaration(const QString &identifier,
+            const KDevelop::SimpleRange &range,
+            KDevelop::Declaration *alias);
+
+    /** Creates an import declaration
+     *  @note The chain must be unlocked
+     */
     KDevelop::Declaration *createImportDeclaration(const QString &identifier,
-                                                   const KDevelop::SimpleRange &range,
-                                                   const KUrl &url);
+            const KDevelop::SimpleRange &range,
+            const KUrl &url);
     QHash<QString, QString> m_dtdElementExclude;
+
+    /** Finds a namespace
+     *  The QID is used in alias declarations etc.
+     *  @note The chain must be locked
+     */
+    KDevelop::Declaration *findNamespaceDeclaration(KDevelop::TopDUContext *context, const QString &ns);
+
+    /** Finds a namespace alias
+     *  The QID is used in alias declarations etc.
+     *  @note The chain must be locked
+     */
+    KDevelop::Declaration *findNamespaceAliasDeclaration(KDevelop::TopDUContext *context, const QString &ns);
 
     /** Keeps a list of defined elements
      *  Used in visitDtdAttlist. */
     QHash<QString, ElementDeclaration*> m_dtdElements;
     QHash<QString, KDevelop::Declaration *> m_nameSpaceAliases;
+
 };
 
 }

@@ -32,15 +32,16 @@ KDEVSGMLDUCHAIN_EXPORT DECLARE_LIST_MEMBER_HASH(ElementDeclarationData, m_attrib
 class KDEVSGMLDUCHAIN_EXPORT ElementDeclarationData : public ClassDeclarationData
 {
 public:
-    
+
     enum ElementType {
-        Element,
-        Text,
+        Element, //An element <ns:name ... > </ns:name>
+        CloseTag, //An child to an element marks the end of the context of an element
+        Text, //A text element
         Doctype,
-        CDATA,
-        PCDATA,
-        Entity,
-        Processing
+        CDATA, //A cdata element
+        PCDATA, //A pcdata element
+        Entity, //A entity
+        Processing //A processing instruction
     };
 
     ElementDeclarationData();
@@ -50,11 +51,12 @@ public:
     ~ElementDeclarationData();
 
     IndexedString name;
+    IndexedString namespacePrefix;
     IndexedString contentType;
     IndexedString content;
     bool closeTagRequired;
     ElementType elementType;
-    
+
     START_APPENDED_LISTS_BASE(ElementDeclarationData, ClassDeclarationData);
     APPENDED_LIST_FIRST(ElementDeclarationData, IndexedString, m_attributes);
     END_APPENDED_LISTS(ElementDeclarationData, m_attributes);
@@ -64,24 +66,43 @@ public:
 class KDEVSGMLDUCHAIN_EXPORT ElementDeclaration : public ClassDeclaration
 {
 public:
-    
+
     ElementDeclaration(const ElementDeclaration &rhs);
     ElementDeclaration(const SimpleRange &range, DUContext *context);
     ElementDeclaration(ElementDeclarationData &data);
     ElementDeclaration(ElementDeclarationData &data, const SimpleRange &range, DUContext *context);
     ~ElementDeclaration();
-    
+
     virtual QString toString() const;
-    
-    void setName(const QString &n);
-    QString name() const;
 
-    void setContentType(const QString &ct);
-    QString contentType() const;
+    QString prettyName() const;
 
-    void setContent(const QString &ct);
-    QString content() const;
-    
+    void setName(const IndexedString &n);
+    void setName(const QString &n) {
+        setName(IndexedString(n));
+    }
+
+    IndexedString name() const;
+
+    void setNamespacePrefix(const IndexedString &ns);
+    void setNamespacePrefix(const QString &ns) {
+        setNamespacePrefix(IndexedString(ns));
+    }
+
+    IndexedString namespacePrefix() const;
+
+    void setContentType(const IndexedString &ct);
+    void setContentType(const QString &ct) {
+        setContentType(IndexedString(ct));
+    }
+    IndexedString contentType() const;
+
+    void setContent(const IndexedString &ct);
+    void setContent(const QString &ct) {
+        setContent(IndexedString(ct));
+    }
+    IndexedString content() const;
+
     void setElementType(ElementDeclarationData::ElementType type);
     ElementDeclarationData::ElementType elementType() const;
 
@@ -96,7 +117,7 @@ public:
     enum {
         Identity = 90
     };
-    
+
 private:
     virtual Declaration* clonePrivate () const;
     DUCHAIN_DECLARE_DATA(ElementDeclaration)

@@ -42,8 +42,6 @@ set( duchain_SRCS
     declarationbuilder.cpp
     contextbuilder.cpp
     includebuilder.cpp
-    xsdcontextbuilder.cpp
-    xsddeclarationbuilder.cpp
     navigation/navigationwidget.cpp
 )
 

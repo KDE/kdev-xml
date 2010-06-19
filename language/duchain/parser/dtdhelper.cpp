@@ -76,7 +76,7 @@ public:
             if (!dec) continue;
             ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(dec);
             if (!elementDec) continue;
-            return elementDec->contentType().toUpper() == "CDATA";
+            return elementDec->contentType().str().toUpper() == "CDATA";
         }
         return false;
     }
@@ -101,7 +101,7 @@ public:
             if (!dec) continue;
             ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(dec);
             if (!elementDec) continue;
-            return elementDec->contentType().toUpper() == "EMPTY";
+            return elementDec->contentType().str().toUpper() == "EMPTY";
         }
         return false;
     }

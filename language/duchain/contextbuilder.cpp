@@ -105,6 +105,48 @@ void ContextBuilder::startVisiting(AstNode* node)
 
 void ContextBuilder::visitElementTag(ElementTagAst* node)
 {
+    //Create imports for XML
+    //This is needed for namespace processing
+    if (node->attributesSequence && node->attributesSequence->count() > 0) {
+        for (int i = 0 ; i  < node->attributesSequence->count(); i++) {
+            AttributeAst * attrib = node->attributesSequence->at(i)->element;
+            if (!attrib || !attrib->value || !attrib->name)
+                continue;
+
+            //Imports
+            IncludeIdentifier incid;
+            if (attrib->ns && nodeText(attrib->ns) == "xmlns") {
+                incid.uri = KDevelop::IndexedString(nodeText(attrib->value));
+            } else if (nodeText(attrib->name) == "xmlns") {
+                incid.uri = KDevelop::IndexedString(nodeText(attrib->value));
+            } else if (nodeText(attrib->name) == "schemaLocation") {
+                QStringList values = nodeText(attrib->value).split(QRegExp("\\s+"));
+                for (int i = 0; i < values.length() && values.length()%2==0; i+=2) {
+                    incid.systemId = KDevelop::IndexedString(values[i+1]);
+                    incid.uri = KDevelop::IndexedString(values[i]);
+                }
+            } else if (nodeText(attrib->name) == "noNamespaceSchemaLocation") {
+                incid.systemId = KDevelop::IndexedString(nodeText(attrib->value));
+            }
+            if (!incid.isNull()) {
+                KUrl url = CatalogHelper::resolve(QString(),
+                                                  incid.systemId.str(),
+                                                  incid.uri.str(),
+                                                  QString(),
+                                                  KMimeType::Ptr(),
+                                                  this->editor()->currentUrl().toUrl());
+                if ( url.isValid() ) {
+                    KDevelop::DUChainWriteLocker lock;
+                    KDevelop::TopDUContext* includedCtx = KDevelop::DUChain::self()->chainForDocument(url);
+                    if (includedCtx) {
+                        currentContext()->topContext()->addImportedParentContext(includedCtx);
+                        currentContext()->topContext()->parsingEnvironmentFile()->addModificationRevisions(includedCtx->parsingEnvironmentFile()->allModificationRevisions());
+                    }
+                }
+            }
+        }
+    }
+
     //kDebug() << "Creating context..";
     KDevelop::SimpleRange range;
     EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
@@ -122,42 +164,6 @@ void ContextBuilder::visitAttribute(AttributeAst* node)
 {
     //TODO must create an abstract type for attributes and identifier must be case insensitive.
     Xml::DefaultVisitor::visitAttribute(node);
-
-    KDevelop::SimpleRange range = nodeRange(node);
-
-    IncludeIdentifier incid;
-    if (node->ns && node->value && nodeText(node->ns) == "xmlns") {
-        incid.uri = KDevelop::IndexedString(nodeText(node->value));
-    } else if (node->name && node->value) {
-      const QString attr = nodeText(node->name);
-      if (attr == "xmlns") {
-        incid.uri = KDevelop::IndexedString(nodeText(node->value));
-      } else if (attr == "schemaLocation") {
-        QStringList values = nodeText(node->value).split(QRegExp("\\s+"));
-        for (int i = 0; i < values.length() && values.length()%2==0; i+=2) {
-            incid.systemId = KDevelop::IndexedString(values[i+1]);
-            incid.uri = KDevelop::IndexedString(values[i]);
-        }
-      } else if (attr == "noNamespaceSchemaLocation") {
-        incid.systemId = KDevelop::IndexedString(nodeText(node->value));
-      }
-    }
-    if (!incid.isNull()) {
-        KUrl url = CatalogHelper::resolve(QString(),
-                                          incid.systemId.str(),
-                                          incid.uri.str(),
-                                          QString(),
-                                          KMimeType::Ptr(),
-                                          this->editor()->currentUrl().toUrl());
-        if ( url.isValid() ) {
-            KDevelop::DUChainWriteLocker lock;
-            KDevelop::TopDUContext* includedCtx = KDevelop::DUChain::self()->chainForDocument(url);
-            if (includedCtx) {
-                currentContext()->topContext()->addImportedParentContext(includedCtx);
-                currentContext()->topContext()->parsingEnvironmentFile()->addModificationRevisions(includedCtx->parsingEnvironmentFile()->allModificationRevisions());
-            }
-        }
-    }
 }
 
 void ContextBuilder::visitDtdCondition(DtdConditionAst* node)
@@ -168,7 +174,7 @@ void ContextBuilder::visitDtdCondition(DtdConditionAst* node)
 void ContextBuilder::visitDtdDoctype(DtdDoctypeAst* node)
 {
     DefaultVisitor::visitDtdDoctype(node);
-    if(node->publicId || node->systemId || node->name) {
+    if (node->publicId || node->systemId || node->name) {
         QString publicId = nodeText(node->publicId);
         QString systemId = nodeText(node->systemId);
         QString doctype = nodeText(node->name);
@@ -218,9 +224,9 @@ void ContextBuilder::visitDtdElement(DtdElementAst* node)
     //NOTE this is called for each element in the construct <!ELEMENT (element1, element2...) ...>
     KDevelop::SimpleRange range;
     EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
-    if(node->name)
+    if (node->name)
         range.start = e->findPosition(node->name->endToken , EditorIntegrator::BackEdge);
-    else if(node->elementsSequence->count() > 0)
+    else if (node->elementsSequence->count() > 0)
         range.start = e->findPosition(node->elementsSequence->back()->element->endToken, EditorIntegrator::BackEdge);
     else
         range.start = e->findPosition(node->topen, EditorIntegrator::BackEdge);
@@ -261,24 +267,39 @@ QString ContextBuilder::tokenText(qint64 begin, qint64 end) const
 
 QString ContextBuilder::tagName(const ElementTagAst *ast) const
 {
-    //NOTE: if that gets commented out, use the simpler code as shown below
-    //if (ast->ns && ast->name)
-    //    return tokenText(e->parseSession()->tokenStream()->token(ast->ns->startToken).begin, e->parseSession()->tokenStream()->token(ast->ns->endToken).end) +
-    //           ":" +
-    //           tokenText(e->parseSession()->tokenStream()->token(ast->name->startToken).begin, e->parseSession()->tokenStream()->token(ast->name->endToken).end);
-
     return editor()->parseSession()->symbol(ast->name);
 }
 
 QString ContextBuilder::tagName(const ElementCloseTagAst *ast) const
 {
-    //NOTE: if that gets commented out, use the simpler code as shown below
-    //if (ast->ns && ast->name)
-    //    return tokenText(e->parseSession()->tokenStream()->token(ast->ns->startToken).begin, e->parseSession()->tokenStream()->token(ast->ns->endToken).end) +
-    //            ":" +
-    //            tokenText(e->parseSession()->tokenStream()->token(ast->name->startToken).begin, e->parseSession()->tokenStream()->token(ast->name->endToken).end);
-
     return editor()->parseSession()->symbol(ast->name);
+}
+
+KDevelop::QualifiedIdentifier ContextBuilder::namespacedIdentifier(const Xml::ElementTagAst* ast) const
+{
+    KDevelop::QualifiedIdentifier id;
+    if (ast->ns)
+        id.push(KDevelop::Identifier(nodeText(ast->ns).toLower()));
+    id.push(KDevelop::Identifier(nodeText(ast->name).toLower()));
+    return id;
+}
+
+KDevelop::QualifiedIdentifier ContextBuilder::namespacedIdentifier(const Xml::ElementCloseTagAst* ast) const
+{
+    KDevelop::QualifiedIdentifier id;
+    if (ast->ns)
+        id.push(KDevelop::Identifier(nodeText(ast->ns).toLower()));
+    id.push(KDevelop::Identifier(nodeText(ast->name).toLower()));
+    return id;
+}
+
+KDevelop::QualifiedIdentifier ContextBuilder::namespacedIdentifier(const Xml::AttributeAst* ast) const
+{
+    KDevelop::QualifiedIdentifier id;
+    if (ast->ns)
+        id.push(KDevelop::Identifier(nodeText(ast->ns).toLower()));
+    id.push(KDevelop::Identifier(nodeText(ast->name).toLower()));
+    return id;
 }
 
 void ContextBuilder::reportProblem(KDevelop::ProblemData::Severity , AstNode* ast, const QString& message)

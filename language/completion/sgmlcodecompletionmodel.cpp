@@ -110,8 +110,20 @@ public:
         return nodeText(context->name);
     }
 
+    QString contextPrettyName() {
+        if(context->ns)
+            return QString("%1:%2").arg(nodeText(context->ns), nodeText(context->name));
+        return nodeText(context->name);
+    }
+
     QString elementName() {
         if(!element) return QString();
+        return nodeText(element->name);
+    }
+
+    QString elementPrettyName() {
+        if(element->ns)
+            return QString("%1:%2").arg(nodeText(element->ns), nodeText(element->name));
         return nodeText(element->name);
     }
 
@@ -133,6 +145,7 @@ public:
 
     QString nodeText(AstNode *node) const
     {
+        if (!node) return QString();
         if (!editor) return QString();
         return editor->parseSession()->symbol(node);
     }
@@ -190,7 +203,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
         r.start().setColumn(500);
     text = view->document()->text(r).remove('\r').remove('\n');
 
-    QRegExp expTag(".*([</>!]+)\\s*\\w*$");
+    QRegExp expTag(".*([</>!]+)\\s*[\\w:]*$");
     expTag.exactMatch(text);
     QRegExp expAtt(".*[</]+\\s*(\\w+\\s*:\\s*)?(\\w+)\\s+[^<>]*$");
     expAtt.exactMatch(text);
@@ -238,7 +251,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
         debug() << "# element null";
     }
 
-    if (tag.isEmpty() && esc.trimmed().isEmpty()) {
+    if (tag.isEmpty() && esc.trimmed().isEmpty() && att.isEmpty()) {
         m_items.append(findHeadersForDocument(view->document()));
     }
 
@@ -271,7 +284,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     //Complete tags
     else if(visitor.context) {
         if((esc.endsWith("/") || esc.endsWith(">")) && !esc.endsWith("/>") || esc.startsWith("</"))
-            m_items.append(CompletionItem(QString("/%1").arg(visitor.contextName()), 10, Element));
+            m_items.append(CompletionItem(QString("/%1").arg(visitor.contextPrettyName()), 10, Element));
         QHash<QString, CompletionItem> items;
         QList<CompletionItem> list = findChildElements(view->document(), range, visitor.contextName());
         foreach(const CompletionItem &i, list) {
@@ -457,7 +470,7 @@ QString SgmlCodeCompletionModel::formatString(Document* document, const QString&
             if (dec->kind() == Declaration::Instance) {
                 ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(dec);
                 if (elementDec) {
-                    QString name = elementDec->name();
+                    QString name = elementDec->name().str();
                     int lowerCount = 0;
                     int upperCount = 0;
                     for (int i =0; i < name.size(); i++) {
@@ -680,10 +693,10 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findAl
         if (d->kind() == Declaration::Type) {
             ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(d);
             if (!elementDec || elementDec->elementType() != ElementDeclarationData::Entity) continue;
-            QString name = elementDec->name();
+            QString name = elementDec->name().str();
             QString info;
             if (!elementDec->content().isEmpty()) {
-                info = elementDec->content().trimmed();
+                info = elementDec->content().str();
             }
             items.insert(name, CompletionItem(name, info, 0, Entity));
         }
@@ -964,7 +977,7 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findAl
         if (d->kind() == Declaration::Type) {
             ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(d);
             if (!elementDec || elementDec->elementType() != ElementDeclarationData::Element) continue;
-            QString name = elementDec->name();
+            QString name = elementDec->name().str();
             items.insert(name, CompletionItem(name, 0, Element));
         }
     }
@@ -1064,7 +1077,7 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findCh
             if (!d || d->kind() != Declaration::Instance) continue;
             ElementDeclaration * elementDec = dynamic_cast<ElementDeclaration *>(d);
             if (!elementDec) continue;
-            QString name = elementDec->name();
+            QString name = elementDec->name().str();
             if (!name.startsWith("#"))
                 items.insert(name, CompletionItem(name, 10, Element));
         }

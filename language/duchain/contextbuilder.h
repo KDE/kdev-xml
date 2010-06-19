@@ -68,10 +68,37 @@ protected:
     KDevelop::SimpleRange nodeRange(AstNode *node) const;
     QString nodeText(AstNode *node) const;
     QString tokenText(qint64 begin, qint64 end) const;
+    
     QString tagName(const ElementTagAst *ast) const;
     QString tagName(const ElementCloseTagAst *ast) const;
 
-    void setStdElementId(const KDevelop::QualifiedIdentifier & id) {
+    /** Creates a namespaced identifier
+     *  The identifier is in lower case.<br/>
+     *  ElementDeclaration has a prettyName, name and ns member fuctions which returns
+     *  case sensitive names.
+     */
+    KDevelop::QualifiedIdentifier namespacedIdentifier(const ElementTagAst *ast) const;
+
+    /** Creates a namespaced identifier
+     *  The identifier is in lower case.<br/>
+     *  ElementDeclaration has a prettyName, name and ns member fuctions which returns
+     *  case sensitive names.
+     */
+    KDevelop::QualifiedIdentifier namespacedIdentifier(const ElementCloseTagAst *ast) const;
+
+    /** Creates a namespaced identifier
+     *  The identifier is in lower case.<br/>
+     *  ElementDeclaration has a prettyName, name and ns member fuctions which returns
+     *  case sensitive names.
+     */
+    KDevelop::QualifiedIdentifier namespacedIdentifier(const AttributeAst *ast) const;
+
+    /** The current elements context to build
+     *  &lt;!ELEMENT (element1 | element2 | element3 ) ...context... &gt;<br/>
+     *  This must be set to each of the element*'s and visitDtdElement
+     *  must be called for each of them.
+     */
+    void setDtdElementId(const KDevelop::QualifiedIdentifier & id) {
         m_dtdElementId = id;
     }
 

@@ -25,6 +25,7 @@
 
 #include <language/duchain/classdeclaration.h>
 #include <language/duchain/namespacealiasdeclaration.h>
+#include <language/duchain/aliasdeclaration.h>
 
 
 using namespace Xml;
@@ -46,11 +47,14 @@ void DeclarationBuilder::closeDeclaration()
 ElementDeclaration* DeclarationBuilder::createClassInstanceDeclaration(const QString &identifier,
         const KDevelop::SimpleRange &range,
         ElementDeclarationData::ElementType type,
-        const QString &nameSpacePrefix)
+        const QString &nsPrefix)
 {
-    Q_UNUSED(nameSpacePrefix);
+
     //SGML ignore case
-    KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(identifier.toLower().toUtf8())));
+    KDevelop::QualifiedIdentifier id;
+    if (!nsPrefix.isEmpty())
+        id.push(KDevelop::Identifier(nsPrefix.toLower()));
+    id.push(KDevelop::Identifier(identifier.toLower()));
     KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
     ElementDeclaration* dec = openDefinition<ElementDeclaration>(id, range);
     dec->setKind(KDevelop::Declaration::Instance);
@@ -58,9 +62,22 @@ ElementDeclaration* DeclarationBuilder::createClassInstanceDeclaration(const QSt
     dec->setClassType(KDevelop::ClassDeclarationData::Class);
     dec->setName(identifier);
     dec->setElementType(type);
-    //dec->setNameSpacePrefix(nameSpacePrefix);
+    dec->setNamespacePrefix(nsPrefix);
     return dec;
 }
+
+KDevelop::Declaration* DeclarationBuilder::createAliasDeclaration(const QString& identifier, const KDevelop::SimpleRange& range, KDevelop::Declaration* alias)
+{
+    debug() << "Alias created for" << identifier;
+    KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(identifier.toUtf8())));
+    KDevelop::AliasDeclaration *dec = 0;
+    KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
+    dec = openDefinition<KDevelop::AliasDeclaration>(id, range);
+    dec->setAliasedDeclaration(KDevelop::IndexedDeclaration(alias));
+    closeDeclaration();
+    return dec;
+}
+
 
 KDevelop::Declaration* DeclarationBuilder::createImportDeclaration(const QString& identifier, const KDevelop::SimpleRange& range, const KUrl& url)
 {
@@ -119,11 +136,11 @@ void DeclarationBuilder::visitDtdElement(DtdElementAst* node)
     QList<NameRangePair> elements;
     if (node->name) {
         elements << NameRangePair(nodeText(node->name), nodeRange(node->name));
-        
+
     } else if (node->elementsSequence) {
         for (int i = 0; i < node->elementsSequence->count(); i++) {
             elements << NameRangePair(nodeText(node->elementsSequence->at(i)->element->name),
-                                       nodeRange(node->elementsSequence->at(i)->element->name));
+                                      nodeRange(node->elementsSequence->at(i)->element->name));
         }
     } else {
         //TODO report error
@@ -172,7 +189,7 @@ void DeclarationBuilder::visitDtdElement(DtdElementAst* node)
             m_dtdElements.insert(element.first.toLower(), dec);
         }
         //TODO visitDtdElementList: there should be an indication if its choice or sequence for now its just a list.
-        setStdElementId(id);
+        setDtdElementId(id);
         DeclarationBuilderBase::visitDtdElement(node);
         closeDeclaration();
     }
@@ -325,31 +342,92 @@ void DeclarationBuilder::visitDtdEntityInclude(DtdEntityIncludeAst* node)
     }
 }
 
-/* In the xsd builder we define the namespaces, in the instances we use them */
 void DeclarationBuilder::visitElementTag(ElementTagAst* node)
 {
-    if(!node || !node->name)
+    if (!node || !node->name)
         return;
-    KDevelop::SimpleRange range = nodeRange(node->name);
-    createClassInstanceDeclaration(nodeText(node->name), range, ElementDeclarationData::Element, nodeText(node->ns));
+
+    //Create namespace declarations defined in XSD's
+    //This must happen before any other attributes/elements is processed
+    KDevelop::Declaration *namespaceDeclaration = 0;
+
+    if (node->attributesSequence && node->attributesSequence->count() > 0) {
+        for (int i = 0 ; i  < node->attributesSequence->count(); i++) {
+
+            AttributeAst * attrib = node->attributesSequence->at(i)->element;
+            if (!attrib || !attrib->value || !attrib->name)
+                continue;
+
+            //Namespaces
+            if (attrib && attrib->name && attrib->value && nodeText(attrib->name) == "targetNamespace") {
+                KDevelop::SimpleRange range;
+                EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
+                range.start = e->findPosition(node->tclose, EditorIntegrator::BackEdge);
+                range.end = findElementChildrenReach(node);
+                KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(nodeText(attrib->value))));
+                KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
+                KDevelop::Declaration *decl = openDefinition<KDevelop::Declaration>(id, nodeRange(attrib->value));
+                if (decl) {
+                    decl->setKind(KDevelop::Declaration::Namespace);
+                    namespaceDeclaration = decl;
+                    openContext(node, range, KDevelop::DUContext::Namespace, id);
+                }
+            }
+        }
+    }
+
+    //Create namespace alias
+    if (node->ns) {
+        KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
+        KDevelop::Declaration *dec = findNamespaceAliasDeclaration(currentContext()->topContext(), nodeText(node->ns));
+        if (dec)
+            createAliasDeclaration(nodeText(node->ns), nodeRange(node->ns), dec);
+    }
+
+    //Create element declarations
+    createClassInstanceDeclaration(nodeText(node->name), nodeRange(node->name), ElementDeclarationData::Element, nodeText(node->ns));
     DeclarationBuilderBase::visitElementTag(node);
     closeDeclaration();
+
+    //Close namespace declaration and context if any
+    if (namespaceDeclaration) {
+        closeContext();
+        closeDeclaration();
+    }
 }
+
+//Marks the end of an elements context and is a child of the element
+void DeclarationBuilder::visitElementCloseTag(ElementCloseTagAst* node)
+{
+    if (node->ns) {
+        KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
+        KDevelop::Declaration *dec = findNamespaceAliasDeclaration(currentContext()->topContext(), nodeText(node->ns));
+        if (dec)
+            createAliasDeclaration(nodeText(node->ns), nodeRange(node->ns), dec);
+    }
+    
+    KDevelop::SimpleRange range = nodeRange(node);
+    createClassInstanceDeclaration(nodeText(node->name), nodeRange(node->name), ElementDeclarationData::CloseTag, nodeText(node->ns));
+    DeclarationBuilderBase::visitElementCloseTag(node);
+    closeDeclaration();
+}
+
 
 /* Among attributes we need to keep record of namespaces and namespace prefixes so what I have so far:
    Attributes: blah="duh"
    Namespaces aliases: xmlns:ns="namespace-uri"
    Namespaces using: xmlns="namespace-uri"
+   Namespace declaration: targetNamespace -> created in element
    Includes:  xmlns:ns, schemaLocation, noNamespaceSchemaLocation and xmlns
 */
 void DeclarationBuilder::visitAttribute(AttributeAst* node)
 {
-    if(!node)
+    if (!node)
         return;
-    Xml::ContextBuilder::visitAttribute(node);
+    DeclarationBuilderBase::visitAttribute(node);
 
     //Includes
-    if(node->value) {
+    if (node->value) {
         KDevelop::SimpleRange range = nodeRange(node->value);
         IncludeIdentifier incid;
         if (node->ns && nodeText(node->ns) == "xmlns") {
@@ -374,7 +452,8 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
                 createImportDeclaration(url.pathOrUrl(), range, url);
                 //closeDeclaration();
             } else {
-                KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString("unresolved")));
+                //TODO a propper unresolved id
+                KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString("")));
                 KDevelop::DUChainWriteLocker lock;
                 KDevelop::Declaration *dec = openDeclaration<KDevelop::Declaration>(id,range);
                 dec->setKind(KDevelop::Declaration::Instance);
@@ -388,29 +467,46 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
         KDevelop::SimpleRange range = nodeRange(node->name);
         KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(nodeText(node->name))));
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
-        //Create in topcontext
+
+        //Create alias in topcontext
         injectContext(editor()->smart(),currentContext()->topContext());
         KDevelop::NamespaceAliasDeclaration *dec = openDefinition<KDevelop::NamespaceAliasDeclaration>(id, range);
-        //TODO must be a resolved QI so find it first
-        KDevelop::QualifiedIdentifier importId(KDevelop::Identifier(KDevelop::IndexedString(nodeText(node->value))));
-        dec->setImportIdentifier(importId);
+
+        //Find the namespace
+        KDevelop::Declaration *nsDec = findNamespaceDeclaration(currentContext()->topContext(), nodeText(node->value));
+        if (nsDec)
+            dec->setImportIdentifier(nsDec->qualifiedIdentifier());
+
         closeDeclaration();
         closeInjectedContext(editor()->smart());
     }
 
     //Namespace use
-    if(node->name && node->value && nodeText(node->name) == "xmlns") {
+    if (node->name && node->value && nodeText(node->name) == "xmlns") {
         KDevelop::SimpleRange range = nodeRange(node->value);
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
-        //Create in topcontext
+
+        //Create namespace use in topcontext
         injectContext(editor()->smart(),currentContext()->topContext());
         KDevelop::QualifiedIdentifier id(globalImportIdentifier());
         KDevelop::NamespaceAliasDeclaration *dec = openDefinition<KDevelop::NamespaceAliasDeclaration>(id, range);
-        //TODO must be a resolved QI so find it first
-        KDevelop::QualifiedIdentifier importId(KDevelop::Identifier(KDevelop::IndexedString(nodeText(node->value))));
-        dec->setImportIdentifier(importId);
+
+        //Find the namespace
+        KDevelop::Declaration *nsDec = findNamespaceDeclaration(currentContext()->topContext(), nodeText(node->value));
+        if (nsDec)
+            dec->setImportIdentifier(nsDec->qualifiedIdentifier());
+
         closeDeclaration();
         closeInjectedContext(editor()->smart());
+    }
+
+    //Create namespace alias
+    if (node->ns)
+    {
+        KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
+        KDevelop::Declaration *dec = findNamespaceAliasDeclaration(currentContext()->topContext(), nodeText(node->ns));
+        if (dec)
+            createAliasDeclaration(nodeText(node->ns), nodeRange(node->ns), dec);
     }
 }
 
@@ -438,3 +534,38 @@ void DeclarationBuilder::visitElementText(ElementTextAst* node)
     DeclarationBuilderBase::visitElementText(node);
     closeDeclaration();
 }
+
+KDevelop::Declaration* DeclarationBuilder::findNamespaceDeclaration(KDevelop::TopDUContext *context, const QString& ns)
+{
+    QList<KDevelop::Declaration *> nsDecl = context->findDeclarations(KDevelop::Identifier(KDevelop::IndexedString(ns)));
+    foreach(KDevelop::Declaration *d, nsDecl) {
+        if (d && d->kind() == KDevelop::Declaration::Namespace)
+            return d;
+    }
+    foreach(KDevelop::DUContext::Import i, context->importedParentContexts()) {
+        KDevelop::Declaration *d = findNamespaceDeclaration(i.indexedContext().context()->topContext(), ns);
+        if (d) return d;
+    }
+    debug() << "Unable to find namespace declaration:" << ns;
+    return 0;
+}
+
+KDevelop::Declaration* DeclarationBuilder::findNamespaceAliasDeclaration(KDevelop::TopDUContext* context, const QString& ns)
+{
+    QList<KDevelop::Declaration *> nsDecl = context->findDeclarations(KDevelop::Identifier(KDevelop::IndexedString(ns)));
+    foreach(KDevelop::Declaration *d, nsDecl) {
+        if (d && d->kind() == KDevelop::Declaration::NamespaceAlias) {
+            KDevelop::NamespaceAliasDeclaration *nsDec = dynamic_cast<KDevelop::NamespaceAliasDeclaration *>(d);
+            if(!nsDec) continue;
+            return nsDec;
+        }
+    }
+    foreach(KDevelop::DUContext::Import i, context->importedParentContexts()) {
+        KDevelop::Declaration *d = findNamespaceDeclaration(i.indexedContext().context()->topContext(), ns);
+        if (d) return d;
+    }
+    debug() << "Unable to find namespace alias declaration:" << ns;
+    return 0;
+}
+
+

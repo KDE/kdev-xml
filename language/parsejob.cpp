@@ -19,7 +19,6 @@
 #include "languagesupport.h"
 #include "parsesession.h"
 #include "sgmlparser.h"
-#include "xsddeclarationbuilder.h"
 #include "declarationbuilder.h"
 #include "includebuilder.h"
 #include "editorintegrator.h"
@@ -185,7 +184,16 @@ void ParseJob::run()
 void ParseJob::visit(KDevelop::Declaration* d)
 {
     if (!d) return;
-    debug() << d->qualifiedIdentifier().toString();
+    if(d->kind() == KDevelop::Declaration::Namespace)
+        debug() << "Namespace:" << d->qualifiedIdentifier().toString();
+    if(d->kind() == KDevelop::Declaration::Type)
+        debug() << "Type     :" << d->qualifiedIdentifier().toString();
+    if(d->kind() == KDevelop::Declaration::Instance)
+        debug() << "Instance :" << d->qualifiedIdentifier().toString();
+    if(d->kind() == KDevelop::Declaration::Import)
+        debug() << "Import   :" << d->qualifiedIdentifier().toString();
+    if(d->kind() == KDevelop::Declaration::Alias)
+        debug() << "Alias    :" << d->qualifiedIdentifier().toString();
     if (d->internalContext()) {
         foreach(KDevelop::Declaration *d1 , d->internalContext()->localDeclarations()) {
             visit(d1);

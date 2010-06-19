@@ -75,16 +75,25 @@ ElementDeclaration::~ElementDeclaration()
 
 }
 
-QString ElementDeclaration::name() const
+QString ElementDeclaration::prettyName() const
 {
-    return d_func()->name.str();
+    if(!d_func()->namespacePrefix.isEmpty())
+        return QString("%1:%2").arg(d_func()->namespacePrefix.str(), d_func()->name.str());
+    else  if(!d_func()->name.isEmpty())
+        return d_func()->name.str();
+    return "";
 }
 
-void ElementDeclaration::setName(const QString& n)
+
+IndexedString ElementDeclaration::name() const
 {
-    d_func_dynamic()->name = IndexedString(n);
+    return d_func()->name;
 }
 
+void ElementDeclaration::setName(const IndexedString& n)
+{
+    d_func_dynamic()->name = n;
+}
 
 void ElementDeclaration::setCloseTagRequired(bool required)
 {
@@ -96,24 +105,34 @@ bool ElementDeclaration::closeTagRequired() const
     return d_func()->closeTagRequired;
 }
 
-void ElementDeclaration::setContentType(const QString& ct)
+void ElementDeclaration::setContentType(const IndexedString& ct)
 {
-    d_func_dynamic()->contentType = IndexedString(ct);
+    d_func_dynamic()->contentType = ct;
 }
 
-QString ElementDeclaration::contentType() const
+IndexedString ElementDeclaration::contentType() const
 {
-    return d_func()->contentType.str();
+    return d_func()->contentType;
 }
 
-void ElementDeclaration::setContent(const QString& ct)
+void ElementDeclaration::setContent(const IndexedString& ct)
 {
-    d_func_dynamic()->content = IndexedString(ct);
+    d_func_dynamic()->content = ct;
 }
 
-QString ElementDeclaration::content() const
+IndexedString ElementDeclaration::content() const
 {
-    return d_func()->content.str();
+    return d_func()->content;
+}
+
+void ElementDeclaration::setNamespacePrefix(const IndexedString& ns)
+{
+    d_func_dynamic()->namespacePrefix = ns;
+}
+
+IndexedString ElementDeclaration::namespacePrefix() const
+{
+    return d_func()->namespacePrefix;
 }
 
 ElementDeclarationData::ElementType ElementDeclaration::elementType() const

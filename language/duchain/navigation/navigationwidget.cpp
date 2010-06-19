@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <KLocalizedString>
 #include <language/duchain/navigation/abstractdeclarationnavigationcontext.h>
 #include <language/duchain/namespacealiasdeclaration.h>
+#include <language/duchain/aliasdeclaration.h>
 
 using namespace Xml;
 using namespace KDevelop;
@@ -41,17 +42,29 @@ public:
         if(!element) {
             return m_declaration->identifier().toString();
         }
-        return element->name();
+        return element->name().str();
     }
 
     virtual QString html(bool shorten = false) {
         KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
 
+        //TODO a propper unresolved identifier
+        if(m_declaration->identifier().isEmpty()) {
+            modifyHtml() += i18n("Unable to resolve");
+            return currentHtml();
+        }
+
+        if(m_declaration->kind() == KDevelop::Declaration::Alias) {
+            KDevelop::AliasDeclaration *dec = dynamic_cast<KDevelop::AliasDeclaration *>(m_declaration.data());
+            if(dec)
+                m_declaration = KDevelop::DeclarationPointer(dec->aliasedDeclaration().data());
+        }
+
         if(m_declaration->kind() == KDevelop::Declaration::Namespace) {
             modifyHtml() += QString("<b>%1:</b> %2").arg(i18n("Namespace"), m_declaration->identifier().toString());
             return currentHtml();
         }
-        
+
         if(m_declaration->kind() == KDevelop::Declaration::NamespaceAlias) {
             KDevelop::NamespaceAliasDeclaration *dec = dynamic_cast<KDevelop::NamespaceAliasDeclaration *>(m_declaration.data());
             if(!dec) {
@@ -71,12 +84,18 @@ public:
         }
 
         ElementDeclaration *element = dynamic_cast<ElementDeclaration *>(m_declaration.data());
+        bool closeTag = false; //Used for make links at end
+        if(element && element->elementType() == ElementDeclarationData::CloseTag) {
+            closeTag = true;
+            element = dynamic_cast<ElementDeclaration *>(element->context()->owner());
+        }
+
         if(!element) {
             modifyHtml() += i18n("Unable to resolve");
             return currentHtml();
         }
 
-        QString name = element->name();
+        QString name = element->prettyName();
         modifyHtml() += i18n("Path:") + "&nbsp;";
         KDevelop::DUContext *c = element->context();
         QList<ElementDeclaration *> decl;
@@ -87,10 +106,13 @@ public:
         }
         modifyHtml() += QString("/");
         for(int i = decl.size() -1; i > -1; --i) {
-            makeLink(decl[i]->name(), KDevelop::DeclarationPointer(decl[i]), NavigationAction::JumpToSource);
+            makeLink(decl[i]->prettyName(), KDevelop::DeclarationPointer(decl[i]), NavigationAction::JumpToSource);
             modifyHtml() += QString("/");
         }
-        modifyHtml() += nameHighlight(Qt::escape(name));
+        if(closeTag)
+            makeLink(name, KDevelop::DeclarationPointer(element), NavigationAction::JumpToSource);
+        else
+            modifyHtml() += nameHighlight(name);
         modifyHtml() += "<br/>";
 
         QList<KDevelop::Declaration *> declarations = element->context()->topContext()->findDeclarations(element->identifier());
@@ -106,9 +128,9 @@ public:
             if(!typeDec->closeTagRequired())
                 modifyHtml() += i18n("Close tag: optional") + "<br/>";
             if(!typeDec->contentType().isEmpty())
-                modifyHtml() += i18n("Content type: ") + Qt::escape(typeDec->contentType()) + "<br/>";
+                modifyHtml() += i18n("Content type: ") + Qt::escape(typeDec->contentType().str()) + "<br/>";
             if(!typeDec->content().isEmpty())
-                modifyHtml() += i18n("Content: ") + Qt::escape(typeDec->content()) + "<br/>";
+                modifyHtml() += i18n("Content: ") + Qt::escape(typeDec->content().str()) + "<br/>";
             if(typeDec->attributesSize() > 0) {
                 modifyHtml() += propertyHighlight(i18n("Attributes:&nbsp;"));
                 for(int i = 0; i < typeDec->attributesSize(); i++) {
