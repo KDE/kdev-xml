@@ -661,10 +661,7 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         text = QString("&%1;").arg(text);
         document->replaceText(range, text);
         return;
-    }
-
-    //Elements
-    if ((seperator == '<' || seperator == '>') || seperator.isNull()) {
+    } else if (item.type == Element) {
         range = growRangeLeft(document, range, "<");
         if (!text.startsWith('<')) {
           text.prepend('<');
