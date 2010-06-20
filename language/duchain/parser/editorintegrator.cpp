@@ -56,6 +56,9 @@ KDevelop::SimpleCursor EditorIntegrator::findPosition(const KDevPG::TokenStream:
 KDevelop::SimpleRange EditorIntegrator::findRange(AstNode * node, RangeEdge edge)
 {
     Q_UNUSED(edge);
+    if (!node) {
+        return KDevelop::SimpleRange::invalid();
+    }
     return KDevelop::SimpleRange(findPosition(node->startToken, FrontEdge), findPosition(node->endToken, BackEdge));
 }
 
