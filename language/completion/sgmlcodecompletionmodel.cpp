@@ -669,6 +669,9 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         if (!text.startsWith('<')) {
           text.prepend('<');
         }
+        if (!text.endsWith('>')) {
+            text.append('>');
+        }
         if (trimmedLine.isEmpty()) {
             range.start().setColumn(0);
             text.prepend(getIndentstring(document, depth));
