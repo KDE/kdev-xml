@@ -98,6 +98,9 @@ public:
             contextStack.pop();
         if (!contextStack.empty())
             context = contextStack.top();
+        else
+            context = 0;
+
         element = 0;
         DefaultVisitor::visitElementCloseTag(node);
     }
