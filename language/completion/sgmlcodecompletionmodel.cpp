@@ -652,10 +652,7 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
                 }
             }
         }
-    }
-
-    //Entities
-    if (item.type == Entity) {
+    } else if (item.type == Entity) {
         range = growRangeRight(document, range, ";");
         range = growRangeLeft(document, range, "&");
         text = QString("&%1;").arg(text);
