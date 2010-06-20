@@ -1102,7 +1102,7 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findHe
     }
     
     if(mime->is("text/html")) {
-        items.append(CompletionItem("<!DOCTYPE html>", 0, Other));
+        items.append(CompletionItem("<!DOCTYPE html>", 10, Other));
         items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">", 0, Header));
         items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">", 0, Header));
         items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\" \"http://www.w3.org/TR/html4/frameset.dtd\">", 0, Header));
