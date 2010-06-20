@@ -626,6 +626,32 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
                 v->setCursorPosition(range.end());
         }
         return;
+    } else if (item.type == Header) {
+        const QString line = document->line(range.start().line());
+        bool haveOpenTag = false;
+        // overwrite existing tag to the left
+        for (int i = range.start().column() - 1; i >= 0; --i) {
+            if (line[i] == '>') {
+                break;
+            } else if(line[i] == '<') {
+                // we have an open tag, overwrite it.
+                range.start().setColumn(i);
+                haveOpenTag = true;
+                break;
+            }
+        }
+        // overwrite existing tag to the right
+        if (haveOpenTag) {
+            for (int i = range.end().column(); i < line.length(); ++i) {
+                if (line[i] == '<') {
+                  break;
+                } else if (line[i] == '>') {
+                  // we have an open tag, overwrite it.
+                  range.end().setColumn(i + 1);
+                  break;
+                }
+            }
+        }
     }
 
     //Entities
@@ -1102,14 +1128,14 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findHe
     }
     
     if(mime->is("text/html")) {
-        items.append(CompletionItem("<!DOCTYPE html>", 10, Other));
+        items.append(CompletionItem("<!DOCTYPE html>", 10, Header));
         items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">", 0, Header));
         items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">", 0, Header));
         items.append(CompletionItem("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\" \"http://www.w3.org/TR/html4/frameset.dtd\">", 0, Header));
     }
     
     if(mime->is("application/docbook+xml")) {
-        items.append(CompletionItem("<!DOCTYPE book>", 10, Other));
+        items.append(CompletionItem("<!DOCTYPE book>", 10, Header));
         items.append(CompletionItem("<!DOCTYPE book PUBLIC \"-//OASIS//DTD DocBook XML V4.5//EN\" \"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd\">", 0, Header));
     }
     
