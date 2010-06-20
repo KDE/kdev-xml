@@ -676,11 +676,9 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
             range.start().setColumn(0);
             text.prepend(getIndentstring(document, depth));
         }
-        document->replaceText(range, text);
-    } else {
-        text = QString("%1").arg(text);
-        document->replaceText(range, text);
     }
+
+    document->replaceText(range, text);
 
     //After replacement move cursur to end of tag ie: <blah>|
     range.end().setColumn(range.start().column() + text.size());
