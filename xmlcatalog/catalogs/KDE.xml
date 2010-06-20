@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
-  <doctype name="gui" uri="kpartgui.dtd" />
+  <doctype name="kpartgui" uri="kpartgui.dtd" />
   <public publicId="-//KDE Project//KPartGUI DTD//EN" uri="kpartgui.dtd" />
   <doctype name="kcfg" uri="kcfg.dtd" />
   <public publicId="-//KDE Project//KCFG DTD//EN" uri="kcfg.dtd" />
