@@ -251,7 +251,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
         debug() << "# element null";
     }
 
-    if (tag.isEmpty() && esc.trimmed().isEmpty() && att.isEmpty()) {
+    if (text.trimmed().isEmpty()) {
         m_items.append(findHeadersForDocument(view->document()));
     }
 
@@ -582,7 +582,7 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         }
         foreach(View * v, document->views()) {
             if (v->isActiveView())
-                v->setCursorPosition(range.start() + Cursor(0, text.length()));
+                v->setCursorPosition(range.start());
         }
         return;
     }
