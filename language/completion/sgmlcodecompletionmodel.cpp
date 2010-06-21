@@ -315,17 +315,21 @@ KTextEditor::Range SgmlCodeCompletionModel::completionRange(KTextEditor::View* v
     KTextEditor::Cursor start = position;
     KTextEditor::Cursor end = position;
     QString text = view->document()->line(position.line());
-    if ( text.isEmpty() || start.column() >= text.length() ) {
-      return Range(start, end);
-    }
-    while (start.column() > 0 && !seps.contains(text.at(start.column()))) {
-        start.setColumn(start.column()-1);
-        if (seps.contains(text.at(start.column()))) {
-            start.setColumn(start.column()+1);
-            break;
+    if (!text.isEmpty()) {
+        if (start.column() >= text.length() && !seps.contains(text.at(text.length()-1))) {
+            start.setColumn(text.length() - 1);
+        }
+        if (start.column() < text.length()) {
+            while (start.column() > 0 && !seps.contains(text.at(start.column()))) {
+                start.setColumn(start.column()-1);
+                if (seps.contains(text.at(start.column()))) {
+                    start.setColumn(start.column()+1);
+                    break;
+                }
+            }
         }
     }
-    while (end.column() < text.length() && !seps.contains(text.at(end.column()))) {
+    while (end.column() < text.length() - 1 && !seps.contains(text.at(end.column()))) {
         end.setColumn(end.column()+1);
         if (seps.contains(text.at(end.column()))) {
             end.setColumn(end.column());
