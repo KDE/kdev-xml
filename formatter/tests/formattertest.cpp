@@ -31,14 +31,41 @@ void Xml::TestFormatter::testHtml()
     */
 }
 
+void Xml::TestFormatter::testXml_data()
+{
+  QTest::addColumn<QString>("leftCtx");
+  QTest::addColumn<QString>("code");
+  QTest::addColumn<QString>("rightCtx");
+  QTest::addColumn<QString>("expected");
+
+  QTest::newRow("xml preamble") << QString("  ") << QString("<?xml version=\"1.0\" encoding=\"utf-8\"?>") << QString("")
+                                << QString("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+
+  QTest::newRow("first") << QString("<?xml version=\"1.0\" encoding=\"utf-8\"?>") << QString("<outer>") <<  QString("")
+                                << QString("<outer>");
+
+  QTest::newRow("nested") << QString("<?xml version=\"1.0\" encoding=\"utf-8\"?><outer>") << QString("<inner>") <<  QString("")
+                                << QString("  <inner>");
+
+  QTest::newRow("nested2") << QString("<?xml version=\"1.0\" encoding=\"utf-8\"?><outer><inner>") << QString("<inner2>") <<  QString("")
+                                << QString("    <inner2>");
+
+  QTest::newRow("second") << QString("<?xml version=\"1.0\" encoding=\"utf-8\"?><outer><inner></inner>") << QString("<inner>") <<  QString("")
+                                << QString("  <inner>");
+}
 
 void Xml::TestFormatter::testXml()
 {
-    /*
-    QString test = "<!doctype html><html><meta><body>text</body></html>";
-    XmlFormatter formatter;
-    formatter.formatSource(test);
-    */
+  QFETCH(QString, leftCtx);
+  QFETCH(QString, code);
+  QFETCH(QString, rightCtx);
+  QFETCH(QString, expected);
+
+  XmlFormatter formatter;
+  formatter.options()["INDENT"] = 2;
+
+  QString actual = formatter.formatSource(code, leftCtx, rightCtx);
+  QCOMPARE(actual, expected);
 }
 
 #include "formattertest.moc"

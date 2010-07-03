@@ -35,6 +35,7 @@ public:
 private Q_SLOTS:
     
     void testHtml();
+    void testXml_data();
     void testXml();
 };
 }
