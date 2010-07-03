@@ -52,6 +52,8 @@ void Xml::TestFormatter::testXml_data()
 
   QTest::newRow("second") << QString("<?xml version=\"1.0\" encoding=\"utf-8\"?><outer><inner></inner>") << QString("<inner>") <<  QString("")
                                 << QString("  <inner>");
+
+  QTest::newRow("closeTag") << QString("<open>\n  <inner>\n") << QString("</inner>") << QString("") << QString("  </inner>");
 }
 
 void Xml::TestFormatter::testXml()

@@ -152,7 +152,7 @@ QString XmlFormatter::formatSource ( const QString& text, const QString& leftCon
         break;
         case  EndElement:
             if ( inElement ) {
-                result << content << token.toString();
+                result << content << indentString( depth - 1, indent ) << token.toString();
             } else {
                 if ( content.trimmed().size() > 0 ) {
                     QStringList list = content.split ( endLine );
