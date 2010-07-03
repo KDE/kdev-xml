@@ -386,32 +386,26 @@ QVariant SgmlCodeCompletionModel::data(const QModelIndex& index, int role) const
 }
 
 
-QString SgmlCodeCompletionModel::getIndentstring(Document* document, int depth) const
+QString SgmlCodeCompletionModel::formatSource(Document* document, const QString& code, const Cursor& pos) const
 {
-    int indentLength = 4;
-    ISourceFormatter::IndentationType indentType = ISourceFormatter::IndentWithSpaces;
-    ISourceFormatter * formatter = 0;
     KMimeType::Ptr mime = KMimeType::mimeType(document->mimeType());
-    formatter = ICore::self()->sourceFormatterController()->formatterForMimeType(mime);
+    ISourceFormatter * formatter = ICore::self()->sourceFormatterController()->formatterForMimeType(mime);
     if (formatter) {
-        indentLength = formatter->indentationLength();
-        indentType = formatter->indentationType();
+        QString leftCtx;
+        for ( int i = 0; i <= pos.line(); ++i ) {
+          if ( i < pos.line() ) {
+            leftCtx += document->line(i) + '\n';
+          } else {
+            leftCtx += document->line(i).left(pos.column());
+          }
+        }
+        qDebug() << code << leftCtx << formatter->formatSource(code, mime, leftCtx);
+        return formatter->formatSource(code, mime, leftCtx);
     }
-    if (indentType == ISourceFormatter::NoChange)
-        return "";
-
-    QChar c = ' ';
-    if (indentType == ISourceFormatter::IndentWithTabs) {
-        c = '\t';
-    }
-
-    QString ret;
-    for (int i = 0; i < depth * indentLength; i++)
-        ret += c;
-    return ret;
+    return code;
 }
 
-QString SgmlCodeCompletionModel::formatString(Document* document, const QString& str, CompletionItemType type) const
+QString SgmlCodeCompletionModel::formatItem(Document* document, const QString& str, CompletionItemType type) const
 {
     if (type != Element)
         return str;
@@ -559,7 +553,7 @@ QChar SgmlCodeCompletionModel::getSeperator(Document* document, const KTextEdito
 void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* document, const KTextEditor::Range& word, const QModelIndex& index) const
 {
     CompletionItem item = m_items.at(index.row());
-    QString text = formatString(document, item.name, item.type);
+    QString text = formatItem(document, item.name, item.type);
     QString line = document->line(word.start().line());
     QString trimmedLine = line.mid(0, word.start().column()).remove('/');
     trimmedLine = trimmedLine.remove('<');
@@ -578,15 +572,12 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         debug() << "right1" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
         range = growRangeRight(document, range, ">");
         debug() << "right2" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
+        text = QString("</%1>").arg(text);
         if (trimmedLine.isEmpty()) {
-            Range r = range;
-            r.start().setColumn(0);
-            text = QString("%1</%2>").arg(getIndentstring(document, depth-1),text);
-            document->replaceText(r, text);
-        } else {
-            text = QString("</%1>").arg(text);
-            document->replaceText(range, text);
+          range.start().setColumn(0);
         }
+        text = formatSource(document, text, word.start());
+        document->replaceText(range, text);
         foreach(View * v, document->views()) {
             if (v->isActiveView())
                 v->setCursorPosition(range.start());
@@ -675,10 +666,10 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         }
         if (trimmedLine.isEmpty()) {
             range.start().setColumn(0);
-            text.prepend(getIndentstring(document, depth));
         }
     }
 
+    text = formatSource(document, text, range.start());
     document->replaceText(range, text);
 
     //After replacement move cursur to end of tag ie: <blah>|
