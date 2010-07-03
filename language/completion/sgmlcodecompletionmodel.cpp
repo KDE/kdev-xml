@@ -399,7 +399,6 @@ QString SgmlCodeCompletionModel::formatSource(Document* document, const QString&
             leftCtx += document->line(i).left(pos.column());
           }
         }
-        qDebug() << code << leftCtx << formatter->formatSource(code, mime, leftCtx);
         return formatter->formatSource(code, mime, leftCtx);
     }
     return code;

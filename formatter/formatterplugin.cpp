@@ -180,7 +180,6 @@ QList< SourceFormatterStyle > FormatterPlugin::predefinedStyles()
 
 void FormatterPlugin::setStyle(const KDevelop::SourceFormatterStyle& style)
 {
-    kDebug() << style.name() << style.content();
     m_style = style;
 }
 
