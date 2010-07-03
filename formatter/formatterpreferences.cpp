@@ -69,27 +69,28 @@ QMap< QString, QVariant > FormatterPreferences::getOptions() {
 
 void FormatterPreferences::caseChanged ( int i )
 {
+    QString caseSetting;
     if( i == 1)
-        m_formatter->options().insert ( "CASE", QVariant ( "LOWER" ) );
+        caseSetting = "LOWER";
     else if( i == 2)
-        m_formatter->options().insert ( "CASE", QVariant ( "UPPER" ) );
+        caseSetting = "UPPER";
     else
-        m_formatter->options().insert ( "CASE", QVariant ( "NONE" ) );
+        caseSetting = "NONE";
+
+    m_formatter->options()["CASE"] = caseSetting;
     updateText ( );
 }
 
 void FormatterPreferences::indentChanged ( int i )
 {
-    m_formatter->options().insert ( "INDENT", QVariant ( i ) );
+    m_formatter->options()["INDENT"] = i;
     updateText ( );
 }
 
 void FormatterPreferences::formatSourceChanged(int i)
 {
-    if(formatSourceCbx->isChecked())
-        m_formatter->options().insert ( "SOURCES", true );
-    else
-        m_formatter->options().insert ( "SOURCES", false );
+    m_formatter->options()["SOURCES"] = formatSourceCbx->isChecked();
+
     updateText ( );
 }
 
