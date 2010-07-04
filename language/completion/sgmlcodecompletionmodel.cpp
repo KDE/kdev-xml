@@ -717,6 +717,9 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
           text.prepend('<');
         }
         if (!text.endsWith('>')) {
+            if (item.isEmpty) {
+                text.append('/');
+            }
             text.append('>');
         }
         if (trimmedLine.isEmpty()) {
@@ -1052,7 +1055,7 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findAl
             ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(d);
             if (!elementDec || elementDec->elementType() != ElementDeclarationData::Element) continue;
             QString name = elementDec->name().str();
-            items.insert(name, CompletionItem(name, 0, Element));
+            items.insert(name, CompletionItem(name, 0, Element, !elementDec->internalContext() || elementDec->internalContext()->localDeclarations().isEmpty()));
         }
     }
 
@@ -1106,7 +1109,7 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findAt
         if (!elementDec) continue;
         for (int i = 0; i < elementDec->attributesSize(); i++) {
             IndexedString str = elementDec->attributes()[i];
-            items.insert(str.str(), CompletionItem(str.str(), 0, Attribute));
+            items.insert(str.str(), CompletionItem(str.str(), 0, Attribute,elementDec->internalContext()->localDeclarations().isEmpty() ));
         }
     }
 
@@ -1153,7 +1156,7 @@ QList< SgmlCodeCompletionModel::CompletionItem > SgmlCodeCompletionModel::findCh
             if (!elementDec) continue;
             QString name = elementDec->name().str();
             if (!name.startsWith("#"))
-                items.insert(name, CompletionItem(name, 10, Element));
+                items.insert(name, CompletionItem(name, 10, Element, !d->internalContext() || elementDec->internalContext()->localDeclarations().isEmpty()));
         }
     }
 

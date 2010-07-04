@@ -61,21 +61,24 @@ protected:
     };
     
     typedef struct CompletionItem {
-        CompletionItem(QString itemName, int itemMatchLevel, CompletionItemType itemType) {
+        CompletionItem(QString itemName, int itemMatchLevel, CompletionItemType itemType, bool empty = false) {
             type = itemType;
             matchLevel = itemMatchLevel;
             name = itemName;
             info = "";
+            isEmpty = empty;
         }
-        CompletionItem(QString itemName, QString itemInfo, int itemMatchLevel, CompletionItemType itemType) {
+        CompletionItem(QString itemName, QString itemInfo, int itemMatchLevel, CompletionItemType itemType, bool empty = false) {
             type = itemType;
             matchLevel = itemMatchLevel;
             name = itemName;
             info = itemInfo;
+            isEmpty = empty;
         }
         QString name;
         QString info;
         int matchLevel;
+        bool isEmpty;
         CompletionItemType type;
     } CompletionItem;
 
