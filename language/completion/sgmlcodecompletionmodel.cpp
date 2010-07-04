@@ -282,6 +282,44 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     }
     //Complete attributes
     else if(visitor.element && !tag.isEmpty()) {
+        // get full element to make sure we filter _all_ attributes, including those following current cursor position
+        Q_ASSERT(range.onSingleLine());
+        QString line = view->document()->line(range.end().line());
+        bool looksGood = false;
+        ///TODO: multiline tags
+        for ( int i = range.end().column(); i < line.length(); ++i ) {
+            if (line[i] == '>') {
+                line.resize(i + 1);
+                looksGood = true;
+                break;
+            } else if (line[i] == '<') {
+                // apparently no proper tag
+                break;
+            }
+        }
+        if (looksGood) {
+            for ( int i = range.end().column(); i > 0; --i ) {
+                if (line[i] == '<') {
+                    line = line.mid(i);
+                    break;
+                } else if (line[i] == '>') {
+                    // apparently no proper tag
+                    looksGood = false;
+                    break;
+                }
+            }
+            if (looksGood ) {
+                // ok, found a tag :)
+                Q_ASSERT(line.startsWith('<'));
+                Q_ASSERT(line.endsWith('>'));
+                session.setContents(line);
+                start = 0;
+                if (session.parse(&start)) {
+                    visitor.visitNode(start);
+                    Q_ASSERT(visitor.element);
+                }
+            }
+        }
         QList< CompletionItem > items = findAttributes(view->document(), range, visitor.elementName());
         QStringList existingAttributes;
         if (visitor.element->attributesSequence) {
