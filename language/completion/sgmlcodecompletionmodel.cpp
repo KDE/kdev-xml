@@ -282,7 +282,19 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     }
     //Complete attributes
     else if(visitor.element && !tag.isEmpty()) {
-        m_items.append(findAttributes(view->document(), range, visitor.elementName()));
+        QList< CompletionItem > items = findAttributes(view->document(), range, visitor.elementName());
+        QStringList existingAttributes;
+        if (visitor.element->attributesSequence) {
+            for ( int i = 0; i < visitor.element->attributesSequence->count(); ++i ) {
+                existingAttributes << editor.parseSession()->symbol(visitor.element->attributesSequence->at(i)->element->name);
+            }
+        }
+        foreach ( const CompletionItem& item, items ) {
+            if (existingAttributes.contains(item.name)) {
+                continue;
+            }
+            m_items << item;
+        }
     }
     //Complete tags
     else if(visitor.context) {
