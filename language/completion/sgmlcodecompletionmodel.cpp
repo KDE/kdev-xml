@@ -423,6 +423,12 @@ QVariant SgmlCodeCompletionModel::data(const QModelIndex& index, int role) const
     if (role == Qt::DisplayRole && index.column() == CodeCompletionModel::Postfix)
         return QVariant(m_items.at(index.row()).info);
 
+    if (role == Qt::BackgroundColorRole && m_items.at(index.row()).matchLevel > 0) {
+      QColor c(Qt::green);
+      c.setAlpha(200);
+      return c;
+    }
+
     if (role == MatchQuality)
         return QVariant(m_items.at(index.row()).matchLevel);
 
