@@ -312,6 +312,8 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
                 // ok, found a tag :)
                 Q_ASSERT(line.startsWith('<'));
                 Q_ASSERT(line.endsWith('>'));
+                // remove > to stay in element
+                line.chop(1);
                 session.setContents(line);
                 start = 0;
                 if (session.parse(&start)) {
