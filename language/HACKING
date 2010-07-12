@@ -1,0 +1,114 @@
+
+* XML/SGML STRUCTURE IN THE DUCHAIN
+* NAMESPACE STRUCTURE IN THE DUCHAIN
+* PARSING SGML
+* A LITTLE INTRODUCTION INTO THE COMPLETION
+* EXTENDING COMPLETION / ADDING SUPPORT FOR CONFIG FILES ETC
+* KNOWN PROBLEMS
+    DTD
+    SCHEMAS
+
+
+XML/SGML STRUCTURE IN THE DUCHAIN:
+    <parent>
+      <child>
+    </parent>
+    
+    Elements are declared as declaration (ElementDeclaration) instances and the context spans to the end of the end tag.
+    The end tag is a child of its open tag, ie </parent> is a child of <parent>
+    In the case of sgml there may be no end tag.
+    An elements attributes is defined as a list in ElementDeclaration. There is no special support for attributes yet.
+    
+
+NAMESPACE STRUCTURE IN THE DUCHAIN:
+    Example, not correct but for illustration:
+    <ns:element xmlns="element/namespace"
+          xmlns:ns="another/namespace"
+          targetNamespcase="some/namespace">
+          
+    xmlns=".." =>       NamespaceAliasDeclaration in top context with id 'globalImportIdentifier()'
+                        ie: 'using namespace ns;' (the 'ns' part)
+                                 
+    xmlns:ns=".." =>    NamespaceAliasDeclaration and with id 'ns'
+                        ie: 'using namespace ns;' (the 'namespace' part)
+                  
+    targetNamespcase=".." =>    Declarion with kind Declaration::Namespace and a context
+                                ie: namespace Ns {..} (the 'Ns' part)
+        
+    <ns:element..> =>   Alias declaration pointing to xmlns:ns.
+    
+    NB: imports/includes is found/resolved using the catalog ie: CatalogHelper. 
+    
+    
+PARSING SGML:
+    To parse SGML we need to know its structure. This is defined in a DTD.
+    So before parsing a file we need to find/build the DTD first using the Catalog.
+    Using DTDHelper the tokenizer and parser will try to correctly parse the contents
+    of the file.
+    
+
+A LITTLE INTRODUCTION INTO THE COMPLETION:
+    DTD and the structure of the XML is stored in the chain.
+    
+    XSD Schema's is stored in Schema accessible through SchemaController,
+      the schema is built with the document.
+      Schema is an acyclic graph similar to the chain, but with a global node index.
+  
+    DTD's and the XSD XML (not the schema) is imported into the top context (importedParentContexts).
+    <!DOCTYPE .. > imports DTD's
+    xmlns, <xs:import ..> and <xs:include ..> imports schema's (the xml not the schema)
+    The reason for importing the schemas xml is it declares namespaces and imports more schemas which
+    is needed to resolve namspaces and documents etc.
+   
+    Namespaces and namespace prefixes is declared in the top context (NamespaceAliasDeclaration).
+   
+    DTD's does not have namespaces, so the name may have a prefix in it.
+   
+    DTD's layout is flat ie: document->elements(0-*)->children(0-*)
+   
+    Schema's must be resolved with a namespace which we can look-up using the chain.
+   
+    Completing names should also include the namespace prefix's which we also can look-up using the chain
+    in other words always complete using the prefixed name ns:name since DTD may define it like this and
+    Schema's need it.
+   
+    Close tags are children of the actual parent tag so opentag->{children(0-*) + closetag}
+   
+    The whole thing is a total hack and clumsy but here it goes......
+    
+    
+EXTENDING COMPLETION / ADDING SUPPORT FOR CONFIG FILES ETC:
+    To add support for config files lets say Spring support for java:
+    Create/Override CompletionSupport and add it to CompletionBase.
+    Create/Override CompletionItem for custom icons or custom completion.
+    
+    If you want to complete classes in the following <bean name="someName" class="someClass">
+    Override method findEnumerations and return a list of classes found in the project etc.
+    
+    An example of this is: XsdCompletionSupport, which adds support for completing xsd schema's.
+      
+KNOWN PROBLEMS:
+  DTD:
+      The DTD parser is broken/faulty:
+        There is now clear seperation between a declaration and its context ie:
+          <!ELEMENT (one, two) (child1 | child2)>
+          <!ELEMENT child1 (child3 | child4)>
+          ...
+          the first declares two elements both with children child1 and child2 
+          therefor both will share ranges of its context and declarations.
+          ie: If the mouse hovers over child1 which elements context do we show, 'one' or 'two'?
+          
+        
+        Something simlar to macros:
+          <!ENTITY % something 'child1 | child2'>
+          <!ELEMENT one  (%something;)>
+          <!ELEMENT two  (%something;)>
+          ...
+          The tokenizer will parse the text 'child1 | child2' twice.
+          This means that context/declaration of 'two' will span the whole text obove.
+
+  SCHEMAS:
+      Does not conform to its specification, the details of this will come later.
+          
+      
+
