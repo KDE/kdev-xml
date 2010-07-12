@@ -15,6 +15,12 @@ include_directories(
 set(sgmlcompletion_SRCS
     ../language_debug.cpp
     sgmlcodecompletionmodel.cpp
+    completionsupport.cpp
+    completionbase.cpp
+    completionitem.cpp
+    xsdcompletionsupport.cpp
+    schemacompletionsupport.cpp
+    dtdcompletionsupport.cpp
 )
 
 

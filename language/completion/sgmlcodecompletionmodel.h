@@ -19,23 +19,28 @@
 #define SGMLCODECOMPLETIONMODEL_H
 
 #include "completionexport.h"
+#include "completionbase.h"
+
 
 #include <KTextEditor/CodeCompletionModel>
 #include <KTextEditor/CodeCompletionModelControllerInterface>
 #include <language/codecompletion/codecompletionmodel.h>
 #include <language/codecompletion/codecompletionworker.h>
 
+namespace KDevelop {
+class TopDUContext;
+}
 
 namespace Xml {
 
-    class KDEVSGMLCOMPLETION_EXPORT SgmlCodeCompletionModel  : public KTextEditor::CodeCompletionModel2, public KTextEditor::CodeCompletionModelControllerInterface
+class KDEVSGMLCOMPLETION_EXPORT SgmlCodeCompletionModel  : public KTextEditor::CodeCompletionModel2, public KTextEditor::CodeCompletionModelControllerInterface, public CompletionModelBase
 {
     Q_OBJECT
     Q_INTERFACES(KTextEditor::CodeCompletionModelControllerInterface)
 public:
     SgmlCodeCompletionModel(QObject *parent);
     virtual ~SgmlCodeCompletionModel();
-    
+
     virtual void completionInvoked(KTextEditor::View* view, const KTextEditor::Range& range, InvocationType invocationType);
 
     virtual QVariant data(const QModelIndex & index, int role) const;
@@ -43,7 +48,7 @@ public:
     //virtual QMap< int, QVariant > itemData(const QModelIndex& index) const;
 
     virtual KTextEditor::Range completionRange(KTextEditor::View* view, const KTextEditor::Cursor &position);
-    
+
     virtual bool shouldAbortCompletion(KTextEditor::View* view, const KTextEditor::SmartRange& range, const QString &currentCompletion);
 
     virtual bool shouldStartCompletion(KTextEditor::View* view, const QString& insertedText, bool userInsertion, const KTextEditor::Cursor& position);
@@ -51,62 +56,28 @@ public:
     virtual void executeCompletionItem2(KTextEditor::Document* document, const KTextEditor::Range& word, const QModelIndex& index) const;
 
 protected:
-    enum CompletionItemType {
-        Other,
-        Element,
-        Attribute,
-        Entity,
-        Header,
-        Enum
-    };
-    
-    typedef struct CompletionItem {
-        CompletionItem(QString itemName, int itemMatchLevel, CompletionItemType itemType, bool empty = false) {
-            type = itemType;
-            matchLevel = itemMatchLevel;
-            name = itemName;
-            info = "";
-            isEmpty = empty;
-        }
-        CompletionItem(QString itemName, QString itemInfo, int itemMatchLevel, CompletionItemType itemType, bool empty = false) {
-            type = itemType;
-            matchLevel = itemMatchLevel;
-            name = itemName;
-            info = itemInfo;
-            isEmpty = empty;
-        }
-        QString name;
-        QString info;
-        int matchLevel;
-        bool isEmpty;
-        CompletionItemType type;
-    } CompletionItem;
-
-    /** The item and its MatchQuality 0-10*/
-    QList< CompletionItem > m_items;
+       /** The item and its MatchQuality 0-10*/
+    QList< CompletionItem::Ptr > m_items;
 
     /** The  depth to indent by*/
     int m_depth;
-    
-    QList< CompletionItem > findChildElements(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &element = QString()) const;
-    QList< CompletionItem > findAttributes(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &element = QString()) const;
-    QList< CompletionItem > findAll(KTextEditor::Document* document, const KTextEditor::Range& range) const;
-    QList< CompletionItem > findAllEntities(KTextEditor::Document* document, const KTextEditor::Range& range) const;
-    QList< CompletionItem > findHeadersForDocument(KTextEditor::Document *document) const;
-    
-    const QIcon getIcon ( CompletionItemType type ) const;
+
+    /** @todo get users indentation profile */
+    QString getIndentstring(KTextEditor::Document* document, int depth) const;
     
     QString formatSource(KTextEditor::Document* document, const QString& source, const KTextEditor::Cursor& pos) const;
-    
+
     /** @todo get users preferences for HTML ie: lower-case */
-    QString formatItem(KTextEditor::Document* document, const QString &str, CompletionItemType type) const;
-    
+    QString formatItem(KTextEditor::Document* document, const QString &str, CompletionItem::CompletionItemType type) const;
+
     /** Finds the seperator before the cursor.
-     */ 
+     */
     QChar getSeperator(KTextEditor::Document* document, const KTextEditor::Cursor &position) const;
-    
+
     KTextEditor::Range growRangeLeft(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &condition) const;
+
     KTextEditor::Range growRangeRight(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &condition) const;
+
 };
 
 }

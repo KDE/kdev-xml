@@ -1,3 +1,5 @@
-1) Complete attribute values.
-2) Improved formatting using sourceformatter.
-3) Show help for htm, docbook etc
+1) Improved formatting using sourceformatter.
+2) Show help for html, docbook etc
+
+
+Also see HACKING

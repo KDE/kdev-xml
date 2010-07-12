@@ -4,5 +4,27 @@
     <file>attribute.png</file>
     <file>element.png</file>
     <file>enumeration.png</file>
+
+    <file>text.png</file>
+    <file>processing.png</file>
+    <file>restriction.png</file>
+
+    <file>sequence.png</file>
+    <file>choice.png</file>
+    <file>all.png</file>
+
+    <file>complexType.png</file>
+    <file>complexContent.png</file>
+    <file>simpleType.png</file>
+    <file>attributeGroup.png</file>
+    <file>annotation.png</file>
+    <file>group.png</file>
+
+    <file>schema.png</file>
+    <file>complexTypes.png</file>
+    <file>simpleTypes.png</file>
+    <file>elements.png</file>
+    <file>attributeGroups.png</file>
+    <file>groups.png</file>
   </qresource>
 </RCC>
