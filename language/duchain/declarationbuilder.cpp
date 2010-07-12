@@ -33,6 +33,9 @@ using namespace Xml;
 DeclarationBuilder::DeclarationBuilder(EditorIntegrator* editor): DeclarationBuilderBase()
 {
     setEditor(editor);
+    m_hasSchema = false;
+    if(!editor->mime().isNull())
+        m_hasSchema = editor->mime()->is("application/xsd");
 }
 
 
@@ -68,7 +71,6 @@ ElementDeclaration* DeclarationBuilder::createClassInstanceDeclaration(const QSt
 
 KDevelop::Declaration* DeclarationBuilder::createAliasDeclaration(const QString& identifier, const KDevelop::SimpleRange& range, KDevelop::Declaration* alias)
 {
-    debug() << "Alias created for" << identifier;
     KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(identifier.toUtf8())));
     KDevelop::AliasDeclaration *dec = 0;
     KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
@@ -351,27 +353,21 @@ void DeclarationBuilder::visitElementTag(ElementTagAst* node)
     //This must happen before any other attributes/elements is processed
     KDevelop::Declaration *namespaceDeclaration = 0;
 
-    if (node->attributesSequence && node->attributesSequence->count() > 0) {
-        for (int i = 0 ; i  < node->attributesSequence->count(); i++) {
-
-            AttributeAst * attrib = node->attributesSequence->at(i)->element;
-            if (!attrib || !attrib->value || !attrib->name)
-                continue;
-
-            //Namespaces
-            if (attrib && attrib->name && attrib->value && nodeText(attrib->name) == "targetNamespace") {
-                KDevelop::SimpleRange range;
-                EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
-                range.start = e->findPosition(node->tclose, EditorIntegrator::BackEdge);
-                range.end = findElementChildrenReach(node);
-                KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(nodeText(attrib->value))));
-                KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
-                KDevelop::Declaration *decl = openDefinition<KDevelop::Declaration>(id, nodeRange(attrib->value));
-                if (decl) {
-                    decl->setKind(KDevelop::Declaration::Namespace);
-                    namespaceDeclaration = decl;
-                    openContext(node, range, KDevelop::DUContext::Namespace, id);
-                }
+    if(m_hasSchema) {
+        AttributeAst * attrib = attribute(node, "targetNamespace");
+        //Namespaces
+        if (attrib && attrib->name && attrib->value) {
+            KDevelop::SimpleRange range;
+            EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
+            range.start = e->findPosition(node->tclose, EditorIntegrator::BackEdge);
+            range.end = findElementChildrenReach(node);
+            KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(nodeText(attrib->value))));
+            KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
+            KDevelop::Declaration *decl = openDefinition<KDevelop::Declaration>(id, nodeRange(attrib->value));
+            if (decl) {
+                decl->setKind(KDevelop::Declaration::Namespace);
+                namespaceDeclaration = decl;
+                openContext(node, range, KDevelop::DUContext::Namespace, id);
             }
         }
     }
@@ -432,6 +428,7 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
         IncludeIdentifier incid;
         if (node->ns && nodeText(node->ns) == "xmlns") {
             incid.uri = KDevelop::IndexedString(nodeText(node->value));
+            //TODO look in schema location as the location may be specified there
         } else if (node->name && nodeText(node->name) == "schemaLocation") {
             QStringList values = nodeText(node->value).split(QRegExp("\\s+"));
             for (int i = 0; i < values.length() && values.length()%2==0; i+=2) {
@@ -452,7 +449,8 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
                 createImportDeclaration(url.pathOrUrl(), range, url);
                 //closeDeclaration();
             } else {
-                //TODO a propper unresolved id
+                debug() << "Unable to build include for:" << incid.systemId.str() << incid.uri.str() <<  this->editor()->currentUrl().toUrl();
+                //TODO a propper unresolved id or just dont declare it
                 KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString("")));
                 KDevelop::DUChainWriteLocker lock;
                 KDevelop::Declaration *dec = openDeclaration<KDevelop::Declaration>(id,range);
@@ -476,6 +474,7 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
         KDevelop::Declaration *nsDec = findNamespaceDeclaration(currentContext()->topContext(), nodeText(node->value));
         if (nsDec)
             dec->setImportIdentifier(nsDec->qualifiedIdentifier());
+        //TODO else a propper unresolved id or just dont declare it
 
         closeDeclaration();
         closeInjectedContext(editor()->smart());
@@ -565,6 +564,22 @@ KDevelop::Declaration* DeclarationBuilder::findNamespaceAliasDeclaration(KDevelo
         if (d) return d;
     }
     debug() << "Unable to find namespace alias declaration:" << ns;
+    return 0;
+}
+
+AttributeAst * DeclarationBuilder::attribute(ElementTagAst* node, const QString &name) const
+{
+    if (!node || !node->attributesSequence)
+        return 0;
+
+    for (int i = 0; i < node->attributesSequence->count(); i++) {
+        AttributeAst *att = node->attributesSequence->at(i)->element;
+        if (att && att->name) {
+            QString attName = nodeText(att->name);
+            if (attName == name)
+                return att;
+        }
+    }
     return 0;
 }
 

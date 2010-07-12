@@ -44,6 +44,7 @@
 #include <language/duchain/declaration.h>
 #include <language/backgroundparser/urlparselock.h>
 #include <language/duchain/duchainutils.h>
+#include <schemabuilder.h>
 
 
 namespace Xml
@@ -61,8 +62,13 @@ ParseJob::~ParseJob()
 
 void ParseJob::run()
 {
+    //Syncronise parsing
     KDevelop::UrlParseLock urlLock(document());
 
+    KUrl documentUrl = document().toUrl();
+    KMimeType::Ptr documentMime = KMimeType::findByUrl(documentUrl);
+
+    //Dont update if not needed
     if ( !(minimumFeatures() & KDevelop::TopDUContext::ForceUpdate) ) {
         KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
         bool needsUpdate = true;
@@ -74,6 +80,14 @@ void ParseJob::run()
                 needsUpdate = false;
             }
         }
+
+        //Update it we dont have the schema
+        if(documentMime->is("application/xsd")) {
+            SchemaMutexLocker lock;
+            if(!SchemaController::self()->schemaForDocument(document()))
+                needsUpdate = true;
+        }
+
         if (!needsUpdate) {
             debug() << "Already up to date" << document().str();
             cleanupSmartRevision();
@@ -82,11 +96,13 @@ void ParseJob::run()
     }
 
     debug() << "Parsing:" << document().str();
+
     //Dont include yourself
     m_includes.insert(document().str(), QString::null);
 
-    //Tokenize
+    //Tokenize and parse
     ParseSession session;
+    session.setMime(documentMime);
     if (!document().str().isEmpty()) {
         session.setCurrentDocument(document().str());
     }
@@ -96,12 +112,12 @@ void ParseJob::run()
     } else {
         session.setContents(contentsFromEditor());
     }
-    
+
     StartAst *start=0;
     if (!session.parse(&start)) {
         debug() << "Failed to parse:" << document().str();
     }
- 
+
     //Build
     debug() << "Building:" << document().str();
     KDevelop::ReferencedTopDUContext top;
@@ -109,7 +125,7 @@ void ParseJob::run()
         KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
         top = KDevelop::DUChain::self()->chainForDocument(document());
     }
- 
+
     if (top) {
         debug() << "Re-compiling:" << document().str();
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
@@ -120,34 +136,43 @@ void ParseJob::run()
     } else {
         debug() << "Compiling:" << document().str();
     }
-    
+
     QList<KDevelop::ProblemPointer> problems;
     problems.append(session.problems());
 
     EditorIntegrator editor(&session);
+    editor.setMime(documentMime);
+
+    //Build includes
     IncludeBuilder includeBuilder(&editor);
     includeBuilder.build(document(), start);
     problems.append(includeBuilder.problems());
     foreach(const IncludeBuilder::IncludeIdentifier &inc, includeBuilder.includes().values()) {
         parseInclude(inc, top);
     }
-    
-    //if(KMimeType::findByUrl(document().toUrl())->is("application/xsd")) {
-    //    XsdDeclarationBuilder builder(&editor);
-    //    top = builder.build(document(), start, top);
-    //    problems.append(builder.problems());
-    //} else {
-        DeclarationBuilder builder(&editor);
-        top = builder.build(document(), start, top);
-        problems.append(builder.problems());
-    //}
+
+    //Build the declarations
+    DeclarationBuilder builder(&editor);
+    top = builder.build(document(), start, top);
+    problems.append(builder.problems());
+
+    //Set the chain the schema builder needs it
     setDuChain(top);
 
+    //Build the XSD schema
+    if (documentMime->is("application/xsd")) {
+        SchemaBuilder builder(&editor);
+        builder.build(document(), start);
+        problems.append(builder.problems());
+    }
+
+    //Report all problems
     foreach(const KDevelop::ProblemPointer &p, problems) {
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
         top->addProblem(p);
     }
 
+    //Finalise
     {
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
 
@@ -164,7 +189,7 @@ void ParseJob::run()
     }
 
     cleanupSmartRevision();
-    
+
     /*
     {
         KDevelop::DUChainReadLocker loc;
@@ -184,15 +209,15 @@ void ParseJob::run()
 void ParseJob::visit(KDevelop::Declaration* d)
 {
     if (!d) return;
-    if(d->kind() == KDevelop::Declaration::Namespace)
+    if (d->kind() == KDevelop::Declaration::Namespace)
         debug() << "Namespace:" << d->qualifiedIdentifier().toString();
-    if(d->kind() == KDevelop::Declaration::Type)
+    if (d->kind() == KDevelop::Declaration::Type)
         debug() << "Type     :" << d->qualifiedIdentifier().toString();
-    if(d->kind() == KDevelop::Declaration::Instance)
+    if (d->kind() == KDevelop::Declaration::Instance)
         debug() << "Instance :" << d->qualifiedIdentifier().toString();
-    if(d->kind() == KDevelop::Declaration::Import)
+    if (d->kind() == KDevelop::Declaration::Import)
         debug() << "Import   :" << d->qualifiedIdentifier().toString();
-    if(d->kind() == KDevelop::Declaration::Alias)
+    if (d->kind() == KDevelop::Declaration::Alias)
         debug() << "Alias    :" << d->qualifiedIdentifier().toString();
     if (d->internalContext()) {
         foreach(KDevelop::Declaration *d1 , d->internalContext()->localDeclarations()) {
@@ -209,7 +234,7 @@ void ParseJob::visit(KDevelop::Declaration* d)
 void ParseJob::parseInclude(const IncludeBuilder::IncludeIdentifier &include, KDevelop::ReferencedTopDUContext top)
 {
     Q_UNUSED(top);
-    
+
     KUrl url = CatalogHelper::resolve(include.publicId.str(),
                                       include.systemId.str(),
                                       include.uri.str(),
@@ -219,11 +244,11 @@ void ParseJob::parseInclude(const IncludeBuilder::IncludeIdentifier &include, KD
     if (!url.isValid())
         return;
 
-    if(m_includes.contains(url.pathOrUrl()))
+    if (m_includes.contains(url.pathOrUrl()))
         return;
-    
+
     m_includes.insert(url.pathOrUrl(), QString::null);
-    
+
     ParseJob job(url);
     job.m_includes = m_includes;
     job.run();

@@ -102,11 +102,18 @@ protected:
      *  @note The chain must be locked
      */
     KDevelop::Declaration *findNamespaceAliasDeclaration(KDevelop::TopDUContext *context, const QString &ns);
+    
+    /** Finds an attribute with name 'name' */
+    AttributeAst * attribute(ElementTagAst *node, const QString &name) const;
 
     /** Keeps a list of defined elements
      *  Used in visitDtdAttlist. */
     QHash<QString, ElementDeclaration*> m_dtdElements;
     QHash<QString, KDevelop::Declaration *> m_nameSpaceAliases;
+    
+    /** XML files that may define a schema ie WSDL, XSD etc
+     */
+    bool m_hasSchema;
 
 };
 

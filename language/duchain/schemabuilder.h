@@ -16,8 +16,8 @@
  *****************************************************************************/
 
 
-#ifndef INCLUDEBUILDER_H
-#define INCLUDEBUILDER_H
+#ifndef SCHEMABUILDER_H
+#define SCHEMABUILDER_H
 
 #include <QMap>
 #include <language/duchain/indexedstring.h>
@@ -25,50 +25,50 @@
 #include "duchainexport.h"
 #include "sgmldebugvisitor.h"
 #include "abstractbuilder.h"
+#include "schema/schema.h"
 
-namespace Xml
-{
+namespace Xml {
 class EditorIntegrator;
 
-/** Extracts includes and namespaces from documents.
- *  This should happen before running the rest of the builders
- *  as they need the namespsces and top contexts if there are any.
+/** Builds a XSD Schema using the Ast tree
+ *  Using the Ast tree as a DOM tree build the schema for the document.
  */
-class KDEVSGMLDUCHAIN_EXPORT IncludeBuilder : public AbstractBuilder
+class KDEVSGMLDUCHAIN_EXPORT SchemaBuilder : public AbstractBuilder
 {
 public:
-    
-    IncludeBuilder(EditorIntegrator* editor);
-    
-    QMap<Xml::AstNode*, IncludeIdentifier> includes();
-    
+    SchemaBuilder(EditorIntegrator* editor);
+    virtual ~SchemaBuilder();
     void build(const KDevelop::IndexedString &document, AstNode* ast);
-    
+
     EditorIntegrator* editor() const {
         return m_editor;
     }
+
 protected:
-    /** Finds dtd imports. */
-    virtual void visitDtdDoctype(DtdDoctypeAst* node);
-    /** Find external references */
-    virtual void visitDtdEntity(DtdEntityAst* node);
-    /** Finds dtd entity imports. */
-    virtual void visitDtdEntityInclude(DtdEntityIncludeAst* node);
-    /** Finds namespace imports. */
-    virtual void visitAttribute(AttributeAst* node);
     virtual void visitElementTag(ElementTagAst* node);
+    virtual void visitElementCloseTag(ElementCloseTagAst* node);
+
 private:
-    bool m_hasSchema;
+    struct SchemaBuilderPrivate;
+    struct SchemaBuilderPrivate *d;
+    QString nodeText(AstNode *node) const;
+    QString tokenText(qint64 begin, qint64 end) const;
+    EditorIntegrator* m_editor;
+    virtual void reportProblem(KDevelop::ProblemData::Severity , AstNode *ast, const QString& message);
+    KDevelop::IndexedString m_document;
+
     /** Finds an attribute with name 'name' */
     AttributeAst * findAttribute(ElementTagAst *node, const QString &name) const;
-    QString tokenText(qint64 begin, qint64 end) const;
-    QString nodeText(AstNode *node) const;
-    virtual void reportProblem(KDevelop::ProblemData::Severity, AstNode* ast, const QString& message);
-    EditorIntegrator* m_editor;
-    QMap<Xml::AstNode*, IncludeIdentifier> m_includes;
-    KDevelop::IndexedString m_document;
+
+    /** Finds a namespace for a namespace prefix in the DUChain */
+    QString findNamespaceForPrefix(const QString &prefix) const;
+    
+    /** Finds a schema node for a prefixed name ie xs:group */
+    SchemaNodePtr nodeForPrefixedName(const QString &prefixedName) const;
+    
+    int m_passCount;
 };
 
 }
 
-#endif // INCLUDEBUILDER_H
+#endif // SCHEMABUILDER_H

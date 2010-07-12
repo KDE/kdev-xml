@@ -19,12 +19,16 @@
 
 #include "editorintegrator.h"
 #include "parsesession.h"
+#include "../language_debug.h"
 
 using namespace Xml;
 
 IncludeBuilder::IncludeBuilder(EditorIntegrator* editor): AbstractBuilder()
 {
     m_editor = editor;
+    m_hasSchema = false;
+    if(!m_editor->mime().isNull())
+        m_hasSchema = m_editor->mime()->is("application/xsd");
 }
 
 QMap< AstNode*, IncludeBuilder::IncludeIdentifier> IncludeBuilder::includes()
@@ -82,6 +86,24 @@ void IncludeBuilder::visitDtdEntityInclude(DtdEntityIncludeAst* node)
     DefaultVisitor::visitDtdEntityInclude(node);
 }
 
+void IncludeBuilder::visitElementTag(ElementTagAst* node)
+{
+    if(m_hasSchema) {
+        debug();
+        /*
+        if(node && node->name && nodeText(node->name) == "import") {
+            IncludeIdentifier id;
+            id.uri = KDevelop::IndexedString(nodeText(attribute(node,"namespace")));
+            id.systemId = KDevelop::IndexedString(nodeText(attribute(node,"schemaLocation")));
+            if(!id.isNull())
+                m_includes.insert(node, id);
+        }
+        */
+    }
+    Xml::DefaultVisitor::visitElementTag(node);
+}
+
+
 void IncludeBuilder::visitAttribute(AttributeAst* node)
 {
     /*TODO need some namespace processing as schemaLocation and noNamespaceSchemaLocation
@@ -111,6 +133,23 @@ void IncludeBuilder::build(const KDevelop::IndexedString& document, AstNode* ast
 {
     m_document = document;
     visitNode(ast);
+}
+
+
+AttributeAst * IncludeBuilder::findAttribute(ElementTagAst* node, const QString &name) const
+{
+    if(!node || !node->attributesSequence)
+        return 0;
+
+    for(int i = 0; i < node->attributesSequence->count(); i++) {
+        AttributeAst *att = node->attributesSequence->at(i)->element;
+        if(att && att->name) {
+            QString attName = nodeText(att->name);
+            if(attName == name)
+                return att;
+        }
+    }
+    return 0;
 }
 
 QString IncludeBuilder::tokenText(qint64 begin, qint64 end) const

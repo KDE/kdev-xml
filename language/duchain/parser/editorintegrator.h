@@ -24,6 +24,7 @@
 
 #include "parserexport.h"
 #include "kdev-pg-token-stream.h"
+#include <KMimeType>
 
 namespace Xml
 {
@@ -115,9 +116,14 @@ public:
      * Retrieve the string represented by a token.
      */
     QString tokenToString(qint64 token) const;
+    
+    void setMime(KMimeType::Ptr mime);
+    
+    KMimeType::Ptr mime() const;
 
 private:
     ParseSession* m_session;
+    KMimeType::Ptr m_mime;
 };
 
 }

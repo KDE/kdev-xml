@@ -238,7 +238,9 @@ namespace KDevelop
 
 
     --NOTE safe but irritating FIRST/FIRST conflict
-    (?[: LA(2).kind == Token_COLON :] (ns=identifier COLON name=identifier) | (name=identifier)) maybeWhites
+    (?[: LA(2).kind == Token_COLON :] (ns=identifier COLON (name=identifier | 0 [: reportProblem(Warning, "Expected attribute name"); :]))
+        | (name=identifier)
+    ) maybeWhites
     (
         EQUAL maybeWhites
         (
@@ -262,7 +264,7 @@ namespace KDevelop
     --      </child2>          * will correctly pop to child2
 
     topen=LT maybeWhites
-    (?  [: LA(2).kind == Token_COLON :] (ns=identifier COLON name=identifier)
+    (?  [: LA(2).kind == Token_COLON :] (ns=identifier COLON (name=identifier | 0 [: reportProblem(Error, "Expected element name"); :] ))
         | (name=identifier)
         | 0 [: reportProblem(Error, "Expected element name"); :]
     ) maybeWhites
@@ -286,7 +288,7 @@ namespace KDevelop
 
 
     topen=CLOSE maybeWhites
-    (?  [: LA(2).kind == Token_COLON :] (ns=identifier COLON name=identifier)
+    (?  [: LA(2).kind == Token_COLON :] (ns=identifier COLON (name=identifier | 0 [: reportProblem(Error, "Expected element name"); :] ))
         | (name=identifier)
         | 0 [: reportProblem(Error, "Expected element name"); :]
     ) maybeWhites

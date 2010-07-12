@@ -1,2 +1,2 @@
 1) Needs Abstract type for attributes to complete enums etc.
-2) Fix broken namespace support.
+2) Fix broken namespace support. A simple outline is in HACKING

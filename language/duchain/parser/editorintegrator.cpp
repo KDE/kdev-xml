@@ -87,3 +87,11 @@ ParseSession * EditorIntegrator::parseSession() const
     return m_session;
 }
 
+void EditorIntegrator::setMime(KMimeType::Ptr mime) {
+    m_mime = mime;
+}
+
+KMimeType::Ptr EditorIntegrator::mime() const {
+    return m_mime;
+}
+

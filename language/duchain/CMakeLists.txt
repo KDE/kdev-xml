@@ -8,6 +8,8 @@ find_package(KDevelop-PG-Qt REQUIRED)
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/parser
     ${CMAKE_CURRENT_SOURCE_DIR}/parser
+    ${CMAKE_CURRENT_BINARY_DIR}/schema
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${KDEVPGQT_INCLUDE_DIR}
@@ -41,8 +43,10 @@ set( duchain_SRCS
     elementdeclaration.cpp
     declarationbuilder.cpp
     contextbuilder.cpp
+    schemabuilder.cpp
     includebuilder.cpp
     navigation/navigationwidget.cpp
+    schema/schema.cpp
 )
 
 
@@ -99,6 +103,7 @@ install(FILES
     duchainexport.h
     parser/parserexport.h
     parser/dtdhelper.h
+    schema/schema.h
     DESTINATION ${INCLUDE_INSTALL_DIR}/kdevsgmlduchain
     COMPONENT Devel
 )
