@@ -274,12 +274,13 @@ namespace KDevelop
         | tclose=GT 
             [: 
                 //TODO still broken not working as should, m_stack is fine but the children is still added to the wrong element
-                bool thisIsNotYourChildThief = false;
+                /* bool thisIsNotYourChildThief = false;
                 while(!m_stack.empty() 
                     && m_dtdHelper.closeOptional(tagName(m_stack.top())) 
                     && !m_dtdHelper.hasChild(tagName(m_stack.top()), tagName(*yynode))
                     && (thisIsNotYourChildThief = true))
                     m_stack.pop();
+                */
                 m_stack.push(*yynode);
             :] ([: /*if(thisIsNotYourChildThief) break;*/ :] #children=element [: if(!m_stack.empty() && m_stack.top() != *yynode) break; :])*
         | 0 [: reportProblem(Error, "Unclosed element"); :]
