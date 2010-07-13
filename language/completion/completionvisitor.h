@@ -46,6 +46,8 @@ namespace Xml {
  */
 class CompletionVisitor : public DefaultVisitor {
 public:
+    enum FormatCase {CASE_LOWER, CASE_UPPER, CASE_MIXED};
+    
     CompletionVisitor(Xml::EditorIntegrator *e) {
         editor = e;
         context = 0;
@@ -164,6 +166,24 @@ public:
     {
         if (!editor) return QString();
         return editor->parseSession()->contents().mid(begin, end - begin + 1);
+    }
+    
+    FormatCase formatCase() {
+        int lower = 0;
+        int upper = 0;
+        QString text = contextName() + elementName();
+        for(int i = 0; i < text.size(); i++) {
+            if(text[i].isUpper()) {
+                upper ++;
+            } else {
+                lower ++;
+            }
+        }
+        if(text.size() == lower)
+            return CASE_LOWER;
+        if(text.size() == upper)
+            return CASE_UPPER;
+        return CASE_MIXED;
     }
 };
 

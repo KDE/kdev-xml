@@ -58,6 +58,9 @@ public:
 protected:
        /** The item and its MatchQuality 0-10*/
     QList< CompletionItem::Ptr > m_items;
+    
+    //Set to true if lowercase is used
+    int m_formatCase;
 
     /** The  depth to indent by*/
     int m_depth;
@@ -74,9 +77,9 @@ protected:
      */
     QChar getSeperator(KTextEditor::Document* document, const KTextEditor::Cursor &position) const;
 
-    KTextEditor::Range growRangeLeft(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &condition) const;
+    KTextEditor::Range growRangeLeft(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &condition, bool ignoreWhites=false) const;
 
-    KTextEditor::Range growRangeRight(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &condition) const;
+    KTextEditor::Range growRangeRight(KTextEditor::Document* document, const KTextEditor::Range& range, const QString &condition, bool ignoreWhites=false) const;
 
 };
 

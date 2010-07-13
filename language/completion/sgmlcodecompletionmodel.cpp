@@ -81,7 +81,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     QString att = expValue.cap(2);
     QString entity = expEntity.cap(1);
 
-    debug() << text << att;
+    //debug() << text << att;
 
     //TODO Hack end
 
@@ -100,6 +100,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     Xml::EditorIntegrator editor(&session);
     CompletionVisitor visitor(&editor);
     visitor.visitNode(start);
+    m_formatCase = visitor.formatCase();
     m_depth = visitor.contextStack.size();
 
     debug() << "# attribute" << visitor.attributePrettyName();
@@ -275,7 +276,9 @@ QVariant SgmlCodeCompletionModel::data(const QModelIndex& index, int role) const
     return QVariant();
 }
 
-
+/*NOTE The source formatter does not format the left context so to have
+  source indented must include the text to the left
+*/
 QString SgmlCodeCompletionModel::formatSource(Document* document, const QString& code, const Cursor& pos) const
 {
     KMimeType::Ptr mime = KMimeType::mimeType(document->mimeType());
@@ -289,6 +292,7 @@ QString SgmlCodeCompletionModel::formatSource(Document* document, const QString&
                 leftCtx += document->line(i).left(pos.column());
             }
         }
+        debug() << leftCtx;
         return formatter->formatSource(code, mime, leftCtx);
     }
     return code;
@@ -296,10 +300,6 @@ QString SgmlCodeCompletionModel::formatSource(Document* document, const QString&
 
 QString SgmlCodeCompletionModel::formatItem(Document* document, const QString& str, CompletionItem::CompletionItemType type) const
 {
-#define CASESENSITIVE 0
-#define LOWERCASE 1
-#define UPPERCASE 1
-
     if (type != CompletionItem::Element)
         return str;
 
@@ -309,90 +309,66 @@ QString SgmlCodeCompletionModel::formatItem(Document* document, const QString& s
             mime->is ( "application/xslt+xml" ) ||
             mime->is ( "application/xsd" ) ||
             mime->is ( "application/wsdl+xml" ) ||
-            mime->is ( "application/x-wsdl" )) {
+            mime->is ( "application/x-wsdl" ) ||
+            mime->is ( "application/docbook+xml" )) {
         return str;
     }
 
-    int lowerCaseCount = 0;
-    int upperCaseCount = 0;
-    {
-        DUChainReadLocker lock;
-        TopDUContext * tc = 0;
-        QHash < QString,  CompletionItem > items;
-        tc = DUChain::self()->chainForDocument(document->url());
-        if (!tc)
-            return str;
-        QList<Declaration *> decs;
-        foreach(Declaration * dec, tc->localDeclarations()) {
-            if (dec->kind() != Declaration::Instance)
-                continue;
-            decs.append(dec);
-            if (dec->internalContext()) {
-                foreach(Declaration * d, dec->internalContext()->localDeclarations()) {
-                    decs.append(d);
-                }
-            }
-        }
-        foreach(Declaration * dec, decs) {
-            if (dec->kind() == Declaration::Instance) {
-                ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(dec);
-                if (elementDec) {
-                    QString name = elementDec->name().str();
-                    int lowerCount = 0;
-                    int upperCount = 0;
-                    for (int i =0; i < name.size(); i++) {
-                        if (name[i].isLower())
-                            lowerCount++;
-                        if (name[i].isUpper())
-                            upperCount++;
-                    }
-                    if (lowerCount == name.length())
-                        lowerCaseCount++;
-                    if (upperCount == name.length())
-                        upperCaseCount++;
-                }
-            }
-        }
-    }
-
-    if (lowerCaseCount && !upperCaseCount) {
+    if (m_formatCase == CompletionVisitor::CASE_LOWER)
         return str.toLower();
-    }
 
-    if (upperCaseCount && !lowerCaseCount) {
+    if (m_formatCase == CompletionVisitor::CASE_UPPER)
         return str.toUpper();
-    }
 
     return str;
 }
 
-Range SgmlCodeCompletionModel::growRangeLeft(Document* document, const Range& range, const QString& condition) const
+Range SgmlCodeCompletionModel::growRangeLeft(Document* document, const Range& range, const QString& condition, bool ignoreWhites) const
 {
     Range r = range;
+    bool grown = false;
     while (r.start().column() > 0) {
         r.start().setColumn(r.start().column() -1);
         QChar c = document->character(r.start());
-        if (condition.contains(c))
+        if(ignoreWhites && c.isSpace()) {
             continue;
+        }
+        if (condition.contains(c)) {
+            grown = true;
+            ignoreWhites = false;
+            continue;
+        }
         r.start().setColumn(r.start().column() + 1);
         break;
     }
-    return r;
+    if(grown)
+        return r;
+    return range;
 }
 
-Range SgmlCodeCompletionModel::growRangeRight(Document* document, const Range& range, const QString& condition) const
+Range SgmlCodeCompletionModel::growRangeRight(Document* document, const Range& range, const QString& condition, bool ignoreWhites) const
 {
     Range r = range;
+    bool grown = false;
     QString line = document->line(range.end().line());
     while (r.end().column() < line.size()) {
         QChar c = document->character(r.end());
+        if(ignoreWhites && c.isSpace()) {
+            r.end().setColumn(r.end().column() +1);
+            continue;
+        }
         if (condition.contains(c)) {
             r.end().setColumn(r.end().column() +1);
+            grown = true;
+            ignoreWhites = false;
             continue;
         }
         break;
     }
-    return r;
+    if(grown) {
+        return r;
+    }
+    return range;
 }
 
 QChar SgmlCodeCompletionModel::getSeperator(Document* document, const KTextEditor::Cursor& position) const
@@ -429,29 +405,30 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
     }
 
     QString text = formatItem(document, item->getName(), item->getType());
-    QString line = document->line(word.start().line());
-    QString trimmedLine = line.mid(0, word.start().column()).remove('/');
-    trimmedLine = trimmedLine.remove('<');
-    trimmedLine = trimmedLine.remove('>').trimmed();
     int depth = m_depth;
+    Range range = word;
     QChar seperator = getSeperator(document, word.start());
 
 
     //Close tag
     //After replacement move cursur to start of context ie <blah>|</blah>
     if (seperator == '/' || text.startsWith('/')) {
+        QString line = document->line(range.start().line());
+        QString trimmedLine = line.mid(0, range.end().column()).remove('/');
+        trimmedLine = trimmedLine.remove('<');
+        trimmedLine = trimmedLine.remove('>').trimmed();
         if (text.startsWith('/'))
             text = text.mid(1, text.size() -1);
-        Range range = word;
         range = growRangeLeft(document, range, "</");
         debug() << "right1" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
         range = growRangeRight(document, range, ">");
         debug() << "right2" << (range.end().column() < line.length() ? line.at(range.end().column()) : ' ');
         text = QString("</%1>").arg(text);
+        //Remove indentation to left, must be re-indented
         if (trimmedLine.isEmpty()) {
             range.start().setColumn(0);
         }
-        text = formatSource(document, text, word.start());
+        text = formatSource(document, text, range.start());
         document->replaceText(range, text);
         foreach(View * v, document->views()) {
             if (v->isActiveView())
@@ -459,8 +436,6 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         }
         return;
     }
-
-    Range range = word;
 
     //Attributes
     if (item->getType() == CompletionItem::Attribute) {
@@ -499,7 +474,9 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
                 v->setCursorPosition(range.end());
         }
         return;
-    } else if (item->getType() == CompletionItem::Header) {
+    }
+    //Headers
+    else if (item->getType() == CompletionItem::Header) {
         const QString line = document->line(range.start().line());
         bool haveOpenTag = false;
         // overwrite existing tag to the left
@@ -531,27 +508,68 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         text = QString("&%1;").arg(text);
         document->replaceText(range, text);
         return;
-    } else if (item->getType() == CompletionItem::Element) {
-        range = growRangeLeft(document, range, "<");
+    }
+
+    /* Tags
+     * <xs:blah attrib=blah>      -> do not append > or />
+     * <xs:blah attrib=blah1      -> do not append > or />
+     *          attrib=blah2>
+     * <  xs:blah  >              -> replace '<  ' with < and replace '  >' with > or />
+     * <xs:blah                   -> append > or />
+     * <xs:blah/>                 -> do not replace '/>' wiht >
+     * xs:blah                    -> prepend < and append > or />
+     */
+    else if (item->getType() == CompletionItem::Element) {
+        QString line = document->line(range.end().line());
+        QString trimmedLine = line.mid(0, range.start().column()).remove('/');
+        bool hasfollowingContent = false;
+        trimmedLine = trimmedLine.remove('<');
+        trimmedLine = trimmedLine.remove('>').trimmed();
+        //DO we have content following the tag like attributes ie '<xs:blah attrib="blah"' or '<xs:blah />'
+        for (int i = range.end().column(); i < line.length(); ++i) {
+            if(line[i].isSpace())
+                continue;
+            if (line[i] != '>') {
+                hasfollowingContent = true;
+                break;
+            }
+        }
+        //Skip over whites and replace '<   ' if found ie '<  xs:blah'
+        range = growRangeLeft(document, range, "<", true);
         if (!text.startsWith('<')) {
             text.prepend('<');
         }
-        if (!text.endsWith('>')) {
+        //Only append > or /> if there is no content after tag name
+        if (!text.endsWith('>') && !hasfollowingContent) {
             if (item->empty()) {
                 text.append('/');
             }
             text.append('>');
+            //Skip over whites and replace '   >' if found ie '<xs:blah  >'
+            range = growRangeRight(document, range, "/>", true);
         }
+        //Remove indentation to left, must be re-indented
         if (trimmedLine.isEmpty()) {
             range.start().setColumn(0);
         }
     }
 
+    //Replace the text
     text = formatSource(document, text, range.start());
     document->replaceText(range, text);
 
-    //After replacement move cursur to end of tag ie: <blah>|
-    range.end().setColumn(range.start().column() + text.size());
+    //Set the range's end column to the end of the replacement
+    //{ ..
+    // range }
+    //{ ...
+    //  replacement }
+    QStringList textList = text.split('\n');
+    int length = textList[textList.size() -1].length();
+    int rangeLength = range.onSingleLine() ? range.end().column() - range.start().column() : range.end().column();
+    debug() << range.end().column() << length << rangeLength;
+    range.end().setColumn(range.end().column() + length - rangeLength);
+
+    //After replacement move cursur to end of tag/replacement ie: <blah>| or "blah|"
     QString growSeps = "=\"'/>";
     range = growRangeRight(document, range, growSeps);
     if (growSeps.contains(document->character(range.end())))
