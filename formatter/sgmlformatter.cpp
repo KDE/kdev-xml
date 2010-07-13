@@ -16,10 +16,9 @@
  *****************************************************************************/
 
 #include "sgmlformatter.h"
+#include "formatter_debug.h"
 
 #include <QtCore/QStack>
-
-#include <KDE/KDebug>
 
 #include <interfaces/isourceformatter.h>
 #include <interfaces/icore.h>
@@ -135,7 +134,7 @@ QString SgmlFormatter::formatTag(const QString &element, const QString& newLineI
         else
             list << sep + leftTrim(l[i]);
     }
-    
+
     if (list.size() > 1) {
         for ( int i = 0; i < list.size() - 1; i++ ) {
             if (i == 0)
@@ -146,13 +145,19 @@ QString SgmlFormatter::formatTag(const QString &element, const QString& newLineI
         ret += indent + list.last();
     } else
         ret += newLineIndent + list.first();
-    
+
+   
+
     return ret;
 }
 
 
 QString SgmlFormatter::formatText(const QString& text, const QString& indent, int* hasNewLine) const
 {
+    if (text.size() == 0) {
+        *hasNewLine = 0;
+        return text;
+    }
     QString ret;
     QStringList list;
     *hasNewLine = 1;
@@ -240,7 +245,6 @@ End tag:
  */
 QString SgmlFormatter::formatSource ( const QString& text, const QString& leftContext, const QString& rightContext ) {
     Q_UNUSED ( rightContext );
-    kDebug();
     if ( text.size() < 1 )
         return text;
 
@@ -253,6 +257,8 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
     QStack<QString> elements;
     m_contentDataIndex = 0;
     m_lineCount = 0;
+    //Used so that we dont print content again when there is a leftContext
+    bool hasLeftContext = leftContext.size();
 
     bool sources = m_options["SOURCES"].toBool();
 
@@ -286,8 +292,9 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
                 if (m_dtdHelper.cdataElement(name)) {
                     QStringRef cdata = readCdataElement(name);
                     if (m_debugEnabled)
-                        kDebug() << "CDATA:" << cdata.toString();
+                        debug() << "CDATA:" << cdata.toString();
                 }
+                content = "";
             } break;
             case  EndElement: {
                 QString name = elementName(token);
@@ -299,6 +306,7 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
                         elements.pop();
                     elements.pop();
                 }
+                content = "";
             } break;
             case  ClosedElement: {
                 QString name = elementName(token);
@@ -310,6 +318,7 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
                             && (!m_dtdHelper.hasChild(elements.top(), name)
                                 || m_dtdHelper.emptyElement(elements.top())))
                         elements.pop();
+                content = "";
             } break;
             case  DTD: {
                 QString name;
@@ -319,19 +328,35 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
                 DtdHelper helper = DtdHelper::instance(publicId, systemId, QString(), name, m_mime);
                 if (!helper.isNull())
                     m_dtdHelper = helper;
+                content = "";
             } break;
             case  Error: {
-                kDebug() << "Error in document";
+                debug() << "Error in document at line:" << m_lineCount << "token:" << token;
                 return text;
             } break;
+            case  Text: {
+                content += token;
+            } break;
+            case Comment: {
+                content = "";
+            }
+            case Other: {
+                content = "";
+            }
+            case Processing: {
+                content = "";
+            }
             default:
-                return text;
+                content = "";
                 break;
             };
             if (m_debugEnabled)
-                kDebug() << token << " " << tokenTypeString(type) << " " << elements.size();
+                debug() << token << " " << tokenTypeString(type) << " " << elements.size();
+            
         }
     }
+
+    //debug() << leftContext << content << text;
 
     m_content = text;
     m_contentData = text.data();
@@ -342,7 +367,7 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
         token = nextToken ( (int *)&type ).toString();
         switch ( type ) {
         case  Error: {
-            kDebug() << "Error in document";
+            debug() << "Error in document at line:" << m_lineCount  << "token:" << token;
             return text;
         } break;
         case  Processing: {
@@ -356,7 +381,11 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             int hasNewLine = 1;
             QString indentStr = indentString(elements.size(), indent);
             QString contentIndentStr = indentString(elements.size(), indent);
-            result << formatText(content, contentIndentStr, &hasNewLine);
+            if (hasLeftContext) {
+                hasLeftContext = false;
+                formatText(content, contentIndentStr, &hasNewLine);
+            } else
+                result << formatText(content, contentIndentStr, &hasNewLine);
             if (!hasNewLine)
                 indentStr = "";
             content = "";
@@ -384,11 +413,15 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             if (!m_dtdHelper.emptyElement(name)) {
                 elements << name;
             }
-            
+
             int hasNewLine = 1;
             QString indentStr = indentString(elements.size() - 1, indent);
             QString contentIndentStr = indentString(elements.size(), indent);
-            result << formatText(content, contentIndentStr, &hasNewLine);
+            if (hasLeftContext) {
+                hasLeftContext = false;
+                formatText(content, contentIndentStr, &hasNewLine);
+            } else
+                result << formatText(content, contentIndentStr, &hasNewLine);
             if (!hasNewLine)
                 indentStr = "";
             content = "";
@@ -398,9 +431,9 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             //CDATA elements
             if (m_dtdHelper.cdataElement(name)) {
                 QStringRef cdata = readCdataElement(name);
-                result << cdataHook(token, cdata.toString(), contentIndentStr);
-                if (m_debugEnabled)
-                    kDebug() << "CDATA:" << cdata.toString();
+                  result << cdataHook(token, cdata.toString(), contentIndentStr);
+                  if (m_debugEnabled)
+                      debug() << "CDATA:" << cdata.toString();
             }
             content = "";
         }
@@ -419,7 +452,11 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             int hasNewLine = 1;
             QString indentStr = indentString(elements.size(), indent);
             QString contentIndentStr = indentString(elements.size()+1, indent);
-            result << formatText(content, contentIndentStr, &hasNewLine);
+            if (hasLeftContext) {
+                hasLeftContext = false;
+                formatText(content, contentIndentStr, &hasNewLine);
+            } else
+                result << formatText(content, contentIndentStr, &hasNewLine);
             if (!hasNewLine)
                 indentStr = "";
             content = "";
@@ -484,7 +521,7 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             return text;
         };
         if (m_debugEnabled)
-            kDebug() << token << " " << tokenTypeString(type) << " " << elements.size();
+            debug() << token << " " << tokenTypeString(type) << " " << elements.size();
     }
     if ( content.length() > 0 )
         result << content;
@@ -514,7 +551,7 @@ QString SgmlFormatter::compactSource ( const QString& text ) {
         token = nextToken ( (int *)&type ).toString();
         switch ( type ) {
         case  Error:
-            kDebug() << "Error in document: " << token;
+            debug() << "Error in document at line:" << m_lineCount << "token:" << token;
             return text;
             break;
         case  Processing:
@@ -573,7 +610,7 @@ QString SgmlFormatter::compactSource ( const QString& text ) {
             content = token;
             break;
         default:
-            kDebug() << "Error in document: " << token;
+            debug() << "Error in document at line:" << m_lineCount << "token:" << token;
             return text;
         };
     }
@@ -586,13 +623,15 @@ QStringRef SgmlFormatter::readCdataElement(const QString& name)
 {
     const QChar *c = &m_contentData[m_contentDataIndex];
     const QChar * end;
-    const QChar * start;
+    const QChar * start = 0;
     qint64 length;
     end = readUntill(c,
                      m_contentData + m_contentDataLength,
                      QString("</%1>").arg(name),
                      IgnoreWhites | IgnoreCase,
                      &start);
+    if(end == c)
+        return QStringRef(&m_content, 0, 0);
     length = start - c;
     QStringRef ref(&m_content, c - m_contentData, length);
     m_contentDataIndex += length;
@@ -611,6 +650,8 @@ QStringRef SgmlFormatter::nextToken(int* tokenType)
 #define default_return(T)\
     length = end - c;\
     m_contentDataIndex += length;\
+    if(m_contentDataIndex > m_contentDataLength)\
+      length = length - m_contentDataIndex - m_contentDataLength;\
     *tokenType = T;\
     return QStringRef(&m_content, c - m_contentData, length);
 
@@ -618,9 +659,12 @@ QStringRef SgmlFormatter::nextToken(int* tokenType)
     const QChar * start;
     qint64 length;
 
-    *tokenType = Text;
-
+    *tokenType = Error;
+    if(m_contentDataIndex >= m_contentDataLength)
+        return QStringRef(&m_content, 0, 0);
     const QChar *c = &m_contentData[m_contentDataIndex];
+    if(!c || c->isNull())
+        return QStringRef(&m_content, 0, 0);
     if (ceq(0,'<')) {
         //<!
         if (ceq(1, '!')) {
@@ -672,6 +716,8 @@ QStringRef SgmlFormatter::nextToken(int* tokenType)
         end = readUntillAny(c+1, cend, "><", IgnoreNone) + 1;
         length = end - c;
         m_contentDataIndex += length;
+        if (m_contentDataIndex > m_contentDataLength)
+            length = length - m_contentDataIndex - m_contentDataLength;
         QStringRef ref(&m_content, c - m_contentData, length);
         if (ref.at(ref.length()-1).unicode() == '<')
             *tokenType = Error;
@@ -790,7 +836,7 @@ QString SgmlFormatter::elementName(const QString& token) const
     static QRegExp exp("<[ \\t>/\\?!%&]*([^ \\t></?!%&]+[:])?([^ \\t></?!%&]+).*");
     if (exp.exactMatch(QString(token).replace(QChar('\n'), QChar(' ')).replace(QChar('\r'), QChar(' '))))
         return exp.cap(2).toLower();
-    kDebug() << "Element name match failed:" << token;
+    debug() << "Element name match failed:" << token;
     return QString::null;
 }
 
@@ -805,7 +851,7 @@ void SgmlFormatter::doctype(const QString& token, QString& name, QString& public
         if (systemId.isEmpty())
             systemId = exp.cap(8);
     } else {
-        kDebug() << "Doctype match failed:" << token;
+        debug() << "Doctype match failed:" << token;
     }
 }
 

@@ -1,5 +1,6 @@
 
 set(kdevsgmlformatter_PART_SRCS
+  formatter_debug.cpp
   sgmlformatter.cpp
   xmlformatter.cpp
   htmlformatter.cpp
@@ -33,7 +34,7 @@ install(TARGETS kdevsgmlformatter DESTINATION ${PLUGIN_INSTALL_DIR})
 
 ##next target
 
-set(formattertest_SRCS tests/formattertest.cpp sgmlformatter.cpp htmlformatter.cpp xmlformatter.cpp)
+set(formattertest_SRCS tests/formattertest.cpp sgmlformatter.cpp htmlformatter.cpp xmlformatter.cpp formatter_debug.cpp)
 kde4_add_unit_test(formattertest ${formattertest_SRCS})
 target_link_libraries( formattertest
     ${QT_QTTEST_LIBRARY} 
