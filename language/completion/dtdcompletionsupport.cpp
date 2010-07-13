@@ -172,8 +172,18 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findChildElements(
             if (!d || d->kind() != Declaration::Instance) continue;
             ElementDeclaration * elementDec = dynamic_cast<ElementDeclaration *>(d);
             if (!elementDec) continue;
-            bool empty = elementDec->contentType().str().toUpper() == "EMPTY";
             QString name = elementDec->name().str();
+            bool empty = false;
+            Identifier id = elementDec->identifier();
+            //Find its type, this would normaly be done through a use builder
+            QList<Declaration *> decList = tc->findDeclarations(id, SimpleCursor::invalid(), tc);
+            foreach(Declaration * dc, decList) {
+                if (!dc || dc->kind() != Declaration::Type || !dc->internalContext() || dc->identifier() != id)
+                continue;
+                elementDec = dynamic_cast<ElementDeclaration *>(dc);
+                if(!elementDec) continue;
+                empty = elementDec->contentType().str().toUpper() == "EMPTY";
+            }
             if (!name.startsWith("#"))
                 items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 10, CompletionItem::Element, empty)));
         }
