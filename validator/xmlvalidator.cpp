@@ -89,7 +89,7 @@ void XmlValidator::errorMessage ( void* ctx, const char* msg, ... ) {
     XmlValidator *v = static_cast<XmlValidator *> ( ctx );
     va_list vl;
     va_start ( vl, msg );
-    char errorStr[2048];
+    char errorStr[8192];
     vsprintf ( errorStr, msg, vl );
     v->m_errors.append ( errorStr );
     va_end ( vl );
@@ -102,7 +102,7 @@ void XmlValidator::warnMessage ( void* ctx, const char* msg, ... ) {
     XmlValidator *v = static_cast<XmlValidator *> ( ctx );
     va_list vl;
     va_start ( vl, msg );
-    char errorStr[2048];
+    char errorStr[8192];
     vsprintf ( errorStr, msg, vl );
     v->m_warnings.append ( errorStr );
     va_end ( vl );

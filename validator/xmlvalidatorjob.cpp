@@ -138,9 +138,9 @@ QString XmlValidatorJob::getLocalURLForSchema ( const QString& file, const QStri
         QString schemaDir = schemaUrl.directory ( KUrl::IgnoreTrailingSlash );
         QString localFile;
         if ( !schemaDir.isEmpty() )
-            localFile =  QString ( "%1/%2/%3" ).arg ( fileUrl.directory ( KUrl::IgnoreTrailingSlash ), schemaDir, schemaUrl.fileName() );
+            localFile =  QString ( "%1/%2/%3" ).arg ( fileUrl.directory (), schemaDir, schemaUrl.fileName() );
         else
-            localFile = QString ( "%1/%2" ).arg ( fileUrl.directory ( KUrl::IgnoreTrailingSlash ), schemaUrl.fileName() );
+            localFile = QString ( "%1/%2" ).arg ( fileUrl.directory (), schemaUrl.fileName() );
         if (QFile::exists(localFile))
             return localFile;
     }

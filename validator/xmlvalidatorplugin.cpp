@@ -85,10 +85,10 @@ ContextMenuExtension XmlValidatorPlugin::contextMenuExtension ( Context* context
         return ext;
     KMimeType::Ptr mime = doc->mimeType();
     if ( mime->is ( "application/xml" ) ||
-         mime->is ( "application/xslt+xml" ) ||
-         mime->is ( "application/xsd" ) ||
-         mime->is ( "application/wsdl+xml" ) ||
-         mime->is ( "application/x-wsdl" )) {
+            mime->is ( "application/xslt+xml" ) ||
+            mime->is ( "application/xsd" ) ||
+            mime->is ( "application/wsdl+xml" ) ||
+            mime->is ( "application/x-wsdl" )) {
         m_validateAction->setEnabled ( true );
         ext.addAction ( ContextMenuExtension::EditGroup, m_validateAction );
     }
@@ -124,11 +124,11 @@ void XmlValidatorPlugin::showDialog() {
         QString resolved;
         if (!systemId.isEmpty() || !publicId.isEmpty())
             resolved = ICatalogManager::self()->resolve(publicId, systemId);
-        if(!resolved.isEmpty())
+        if (!resolved.isEmpty())
             schemas.insert(resolved, "dtd");
         if (!systemId.isEmpty() && resolved.isEmpty())
             resolved = ICatalogManager::self()->resolveUri(systemId);
-        if(!resolved.isEmpty())
+        if (!resolved.isEmpty())
             schemas.insert(resolved, "dtd");
         if (!systemId.isEmpty() && resolved.isEmpty())
             schemas.insert(systemId, "dtd");
@@ -136,6 +136,7 @@ void XmlValidatorPlugin::showDialog() {
             schemas.insert ( QString ( "DOCTYPE %1" ).arg ( doctype.name() ), "dtd" );
     }
 
+    //Only root nodes
     QDomNodeList nodeList = xdoc.childNodes();
     for ( int i = 0; i < nodeList.size(); i++ ) {
         QDomNode node = nodeList.at ( i );
@@ -148,28 +149,26 @@ void XmlValidatorPlugin::showDialog() {
             QDomNamedNodeMap m = node.attributes();
             for ( int j = 0; j < m.count(); j++ ) {
                 QDomNode attribute = m.item ( j );
-                if ( attribute.namespaceURI() == "http://www.w3.org/2001/XMLSchema" || attribute.namespaceURI() == "http://www.w3.org/2001/XMLSchema-instance" ) {
-                    if ( attribute.localName() == "schemaLocation" ) {
-                        QStringList sl = attribute.nodeValue().split ( QRegExp ( "\\s+" ) );
-                        for ( int k = 0; k < sl.size() && sl.size()%2 == 0; k += 2 ) {
-                            QString resolved = ICatalogManager::self()->resolveSystemId(sl[k+1]);
-                            if (resolved.isEmpty())
-                                resolved = ICatalogManager::self()->resolveUri(sl[k+1]);
-                            if (!resolved.isEmpty())
-                                schemas.insert(resolved, "xsd");
-                            else
-                                schemas.insert ( sl[k+1], "xsd" );
-                        }
-                    }
-                    if ( attribute.localName() == "noNamespaceSchemaLocation" ) {
-                        QString resolved = ICatalogManager::self()->resolveSystemId(attribute.nodeValue());
+                if ( attribute.localName() == "schemaLocation" ) {
+                    QStringList sl = attribute.nodeValue().split ( QRegExp ( "\\s+" ) );
+                    for ( int k = 0; k < sl.size() && sl.size()%2 == 0; k += 2 ) {
+                        QString resolved = ICatalogManager::self()->resolveSystemId(sl[k+1]);
                         if (resolved.isEmpty())
-                            resolved = ICatalogManager::self()->resolveUri(attribute.nodeValue());
+                            resolved = ICatalogManager::self()->resolveUri(sl[k+1]);
                         if (!resolved.isEmpty())
                             schemas.insert(resolved, "xsd");
                         else
-                            schemas.insert ( attribute.nodeValue(), "xsd" );
+                            schemas.insert ( sl[k+1], "xsd" );
                     }
+                }
+                if ( attribute.localName() == "noNamespaceSchemaLocation" ) {
+                    QString resolved = ICatalogManager::self()->resolveSystemId(attribute.nodeValue());
+                    if (resolved.isEmpty())
+                        resolved = ICatalogManager::self()->resolveUri(attribute.nodeValue());
+                    if (!resolved.isEmpty())
+                        schemas.insert(resolved, "xsd");
+                    else
+                        schemas.insert ( attribute.nodeValue(), "xsd" );
                 }
             }
         }
@@ -213,7 +212,7 @@ void XmlValidatorPlugin::slotValidate() {
                 job = XmlValidatorJob::schemaValidationJob( doc->url().toLocalFile(), schema.first );
             } else if (localMime->is( "application/xml-dtd" )) {
                 job = XmlValidatorJob::dtdValidationJob ( doc->url().toLocalFile(), schema.first );
-            } else if(schema.second == "xsd") {
+            } else if (schema.second == "xsd") {
                 job = XmlValidatorJob::schemaValidationJob( doc->url().toLocalFile(), schema.first );
             } else if (schema.second == "dtd") {
                 job = XmlValidatorJob::dtdValidationJob ( doc->url().toLocalFile(), schema.first );
