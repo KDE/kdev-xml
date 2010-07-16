@@ -17,10 +17,11 @@
 
 #include "tokenizer.h"
 
+#include "../language_debug.h"
+
 #include <QtCore/QRegExp>
 
 #include <KDE/KMimeType>
-#include <KDE/KDebug>
 
 #include "dtdhelper.h"
 
@@ -48,7 +49,6 @@ void Tokenizer::init(TokenStream* tokenstream, const QChar* content, qint64 cont
     m_contentLength = contentLength;
     m_enlc = 0;
     m_processEndline = true;
-    m_elementNameRegexp.setPattern("<[ \\t>/\\?!%&]*([^ \\t></?!%&]+[:])?([^ \\t></?!%&]+).*");
     m_doctypeRegexp.setPattern(".*<!\\s*doctype\\s+([\\w\\d]*)\\s*(public\\s+([\"'])([^\"']*)[\"'](\\s+[\"']([^\"']*)[\"'])?)?(system\\s*[\"']([^\"']*)[\"'])?.*");
     m_doctypeRegexp.setCaseSensitivity(Qt::CaseInsensitive);
 }
@@ -166,10 +166,20 @@ QString Tokenizer::removeWhites(QString str) const {
 
 QString Tokenizer::elementName(const QString& token) const
 {
-    if (m_elementNameRegexp.exactMatch(QString(token).replace(QChar('\n'), QChar(' ')).replace(QChar('\r'), QChar(' '))))
-        return m_elementNameRegexp.cap(2);
-    kDebug() << "Element name match failed!";
-    return QString::null;
+    // </ns:element> or < ns:element attrib="blah"> or <!DOCTYPE .. or <?php ..
+    //   ^        ^       ^        ^                     ^     ^         ^ ^
+    QString name;
+    QString seps = "<>/?![]";
+    for(int i = 0; i < token.size(); i++) {
+        if(token[i].isSpace() || seps.contains(token[i])) {
+            if(!name.isEmpty()) break;
+            continue;
+        }
+        name += token[i];
+    }
+    if(name.isEmpty())
+        debug() << "Element name match failed:" << token;
+    return name;
 }
 
 void Tokenizer::doctype(const QString& token, QString& name, QString& publicId, QString& systemId) const
@@ -181,7 +191,7 @@ void Tokenizer::doctype(const QString& token, QString& name, QString& publicId, 
         if (systemId.isEmpty())
             systemId = m_doctypeRegexp.cap(8);
     } else {
-        kDebug() << "Doctype match failed!";
+        debug() << "Doctype match failed!";
     }
 }
 
@@ -191,5 +201,5 @@ void Tokenizer::createNewline(int pos)
         return;
     if (m_tokenStream) m_tokenStream->locationTable()->newline(pos);
     m_enlc++;
-    //kDebug() << "New line at:" << pos << "# Lines:" << m_enlc;
+    //debug() << "New line at:" << pos << "# Lines:" << m_enlc;
 }

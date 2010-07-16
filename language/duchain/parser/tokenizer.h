@@ -156,7 +156,6 @@ protected:
 private:
     void init(TokenStream* tokenstream, const QChar* content, qint64 contentLength);
     int m_enlc;
-    QRegExp m_elementNameRegexp;
     QRegExp m_doctypeRegexp;
 };
 
