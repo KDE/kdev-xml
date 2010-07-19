@@ -123,8 +123,8 @@ namespace KDevelop
        CDATA ("<![CDATA[ ]>"),       --Treated seperately because of <![ in DTD
        PCDATA ("<![PCDATA[ ]>"),     --Treated seperately because of <![ in DTD
        PROC ("<?xml ?>"),
-       PHP ("<?php ?>"),
-       SRC ("<% %>"),                --<% TEXT %> ie: JSP
+       PHP ("<?php ?>"),             --Not Used
+       SRC ("<% %>"),                --Not Used <% TEXT %> ie: JSP
        WHITE ("white");;
 
 ---------------
@@ -198,9 +198,9 @@ namespace KDevelop
     | element=elementText
     | element=elementPCDATA
     | element=elementCDATA
-    | element=elementPHP
+    | element=elementPHP --Not Used
     | element=elementTag
-    | element=elementSource
+    | element=elementSource  --Not Used
     | element=elementProcessing
     | element=elementComment
     | element=dtdDoctype
@@ -215,7 +215,6 @@ namespace KDevelop
 ->  element [
         member variable element: AstNode*;
     ];;
-
 
     WHITE+ | 0
 ->  maybeWhites ;;
@@ -595,12 +594,13 @@ QString Parser::tokenText(qint64 begin, qint64 end) const
 
 QString Parser::tagName(const ElementTagAst *ast) const
 {
+    //DTD does not use prefixes, the whole prefixed name is its name
     if(!ast)
         return QString();
-    //if(ast->ns && ast->name)
-    //    return tokenText(tokenStream->token(ast->ns->startToken).begin, tokenStream->token(ast->ns->endToken).end) +
-    //            ":" +
-    //            tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
+    if(ast->ns && ast->name)
+        return tokenText(tokenStream->token(ast->ns->startToken).begin, tokenStream->token(ast->ns->endToken).end) +
+                ":" +
+                tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
     if(ast->name)
         return tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
     return QString();
@@ -608,12 +608,13 @@ QString Parser::tagName(const ElementTagAst *ast) const
 
 QString Parser::tagName(const ElementCloseTagAst *ast) const
 {
+    //DTD does not use prefixes, the whole prefixed name is its name
     if(!ast)
         return QString();
-    //if(ast->ns && ast->name)
-    //    return tokenText(tokenStream->token(ast->ns->startToken).begin, tokenStream->token(ast->ns->endToken).end) +
-    //            ":" +
-    //            tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
+    if(ast->ns && ast->name)
+        return tokenText(tokenStream->token(ast->ns->startToken).begin, tokenStream->token(ast->ns->endToken).end) +
+                ":" +
+                tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
     if(ast->name)
         return tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
     return QString();

@@ -167,6 +167,20 @@ int SgmlTokenizer::nextTokenKind() {
                 DEFAULT_RETURN(Parser::Token_TEXT, 1)
             }
             case('<'): {
+                if (cursor < end) {
+                    if ((cursor+1)->unicode() == '%') {
+                        READ_UNTIL("%>", IgnoreNone);
+                        //DEFAULT_RETURN(Parser::Token_SRC, readLength)
+                        m_curpos += readLength;
+                        return nextTokenKind();
+                    }
+                    if ((cursor+1)->unicode() == '?') {
+                        READ_UNTIL("?>", IgnoreNone);
+                        //DEFAULT_RETURN(Parser::Token_PHP, readLength)
+                        m_curpos += readLength;
+                        return nextTokenKind();
+                    }
+                }
                 QStringRef seq(&m_content, m_states.top().begin - start, cursor - start + readLength);
                 kDebug() << "Bad escape sequence! " << seq.toString();
                 DEFAULT_RETURN(Parser::Token_EOF, 1)
@@ -276,17 +290,20 @@ int SgmlTokenizer::nextTokenKind() {
             if (str.endsWith('?') && str.length() > 2)str.remove(str.size()-1, 1); //ie <?xml?> or <??>
             if (str.startsWith("<?php")) {
                 READ_UNTIL("?>", IgnoreNone);
-                DEFAULT_RETURN(Parser::Token_PHP, readLength)
-            }
-            if (str.startsWith("<?xml")) {
-                READ_UNTIL("?>", IgnoreNone);
-                DEFAULT_RETURN(Parser::Token_PROC, readLength)
+                //DEFAULT_RETURN(Parser::Token_PHP, readLength)
+                m_curpos += readLength;
+                return nextTokenKind();
             }
             if (str.startsWith("<?=")) {
                 READ_UNTIL("?>", IgnoreNone);
-                DEFAULT_RETURN(Parser::Token_PHP, readLength)
+                //DEFAULT_RETURN(Parser::Token_PHP, readLength)
+                m_curpos += readLength;
+                return nextTokenKind();
             }
-
+            if (str.startsWith("<?")) {
+                READ_UNTIL_ANY(">", IgnoreNone);
+                DEFAULT_RETURN(Parser::Token_PROC, readLength+1)
+            }
             //TODO what now?
             kDebug() << "Unknown processing instruction: " << str;
             DEFAULT_RETURN(Parser::Token_EOF, readLength)
@@ -294,7 +311,9 @@ int SgmlTokenizer::nextTokenKind() {
 
         if (str.startsWith("<%")) {
             READ_UNTIL("%>", IgnoreNone);
-            DEFAULT_RETURN(Parser::Token_SRC, readLength)
+            //DEFAULT_RETURN(Parser::Token_SRC, readLength)
+            m_curpos += readLength;
+            return nextTokenKind();
         }
 
         if (str.startsWith("</")) {
