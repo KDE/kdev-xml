@@ -352,7 +352,6 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             };
             if (m_debugEnabled)
                 debug() << token << " " << tokenTypeString(type) << " " << elements.size();
-            
         }
     }
 
@@ -833,11 +832,20 @@ QString SgmlFormatter::removeWhites(QString str) const {
 
 QString SgmlFormatter::elementName(const QString& token) const
 {
-    static QRegExp exp("<[ \\t>/\\?!%&]*([^ \\t></?!%&]+[:])?([^ \\t></?!%&]+).*");
-    if (exp.exactMatch(QString(token).replace(QChar('\n'), QChar(' ')).replace(QChar('\r'), QChar(' '))))
-        return exp.cap(2).toLower();
-    debug() << "Element name match failed:" << token;
-    return QString::null;
+    // </ns:element> or < ns:element attrib="blah"> or <!DOCTYPE .. or <?php ..
+    //   ^        ^       ^        ^                     ^     ^         ^ ^
+    QString name;
+    QString seps = "<>/?![]";
+    for(int i = 0; i < token.size(); i++) {
+        if(token[i].isSpace() || seps.contains(token[i])) {
+            if(!name.isEmpty()) break;
+            continue;
+        }
+        name += token[i];
+    }
+    if(name.isEmpty())
+        debug() << "Element name match failed:" << token;
+    return name;
 }
 
 void SgmlFormatter::doctype(const QString& token, QString& name, QString& publicId, QString& systemId) const
