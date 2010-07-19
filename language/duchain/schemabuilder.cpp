@@ -124,212 +124,215 @@ void SchemaBuilder::visitElementTag(ElementTagAst* node)
         }
     }
 
-    else if (name == "group" && !d->stack.isEmpty()) {
-        AttributeAst *ref = findAttribute(node, "ref");
-        if (ref) {
-            //Dont push
-            QString refStr = nodeText(ref->value);
-            SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-            if (refPtr) {
-                SchemaMutexLocker lock;
-                d->stack.top()->add(refPtr);
-            } else {
-                debug() << "Unable to find:" << refStr;
-            }
-        } else {
-            AttributeAst *name = findAttribute(node, "name");
-            if (name && name->value) {
-                SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
-                ptr = new SchemaGroup(qname);
-                SchemaMutexLocker lock;
-                d->stack.top()->add(ptr);
-                d->stack.push(ptr);
-                d->schema->addNode(ptr);
-            }
-        }
-    }
-
-    else if (name == "simpleType" && !d->stack.isEmpty()) {
-        AttributeAst *name = findAttribute(node, "name");
-        if (name && name->value) {
-            SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
-            ptr = new SchemaSimpleType(qname);
-            SchemaMutexLocker lock;
-            d->stack.top()->add(ptr);
-            d->stack.push(ptr);
-            d->schema->addNode(ptr);
-        }
-    }
-
-    else if (name == "complexType" && !d->stack.isEmpty()) {
-        AttributeAst *name = findAttribute(node, "name");
-        if (name && name->value) {
-            SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
-            ptr = new SchemaComplexType(qname);
-            SchemaMutexLocker lock;
-            d->stack.top()->add(ptr);
-            d->stack.push(ptr);
-            d->schema->addNode(ptr);
-        }
-    }
-
-    else if (name == "attributeGroup" && !d->stack.isEmpty()) {
-        AttributeAst *ref = findAttribute(node, "ref");
-        if (ref) {
-            //Dont push
-            QString refStr = nodeText(ref->value);
-            SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-            if (refPtr) {
-                SchemaMutexLocker lock;
-                d->stack.top()->add(refPtr);
-            } else {
-                debug() << "Unable to find reference:" << refStr;
-            }
-        } else {
-            AttributeAst *name = findAttribute(node, "name");
-            if (name && name->value) {
-                SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
-                ptr = new SchemaAttributeGroup(qname);
-                SchemaMutexLocker lock;
-                d->stack.top()->add(ptr);
-                d->stack.push(ptr);
-                d->schema->addNode(ptr);
-            }
-        }
-    }
-
-    else if (name == "element" && !d->stack.isEmpty()) {
-        AttributeAst *ref = findAttribute(node, "ref");
-        if (ref) {
-            //Dont push
-            QString refStr = nodeText(ref->value);
-            SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-            if (refPtr) {
-                SchemaMutexLocker lock;
-                d->stack.top()->add(refPtr);
-            } else {
-                debug() << "Unable to find reference:" << refStr;
-            }
-        } else {
-            AttributeAst *name = findAttribute(node, "name");
-            if (name && name->value) {
-                SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
-                ptr = new SchemaElement(qname);
-                AttributeAst *type = findAttribute(node, "type");
-                if (type) {
-                    QString refStr = nodeText(type->value);
-                    SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-                    if (refPtr)
-                        ptr->add(refPtr);
-                    else
-                        debug() << "Unable to find:" << refStr;
+    if (d->schema && !d->stack.isEmpty()) {
+        
+        if (name == "group") {
+            AttributeAst *ref = findAttribute(node, "ref");
+            if (ref) {
+                //Dont push
+                QString refStr = nodeText(ref->value);
+                SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                if (refPtr) {
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(refPtr);
+                } else {
+                    debug() << "Unable to find:" << refStr;
                 }
-                SchemaMutexLocker lock;
-                d->stack.top()->add(ptr);
-                d->stack.push(ptr);
-                d->schema->addNode(ptr);
-            }
-        }
-    }
-
-    else if (name == "extension" && !d->stack.isEmpty()) {
-        //Dont push
-        AttributeAst *base = findAttribute(node, "base");
-        if (base && base->value) {
-            QString refStr = nodeText(base->value);
-            SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-            if (refPtr) {
-                SchemaMutexLocker lock;
-                d->stack.top()->add(refPtr);
             } else {
-                debug() << "Unable to find reference:" << refStr;
-            }
-        }
-    }
-
-    else if (name == "restriction" && !d->stack.isEmpty()) {
-        //Dont push
-        AttributeAst *base = findAttribute(node, "base");
-        if (base && base->value) {
-            QString refStr = nodeText(base->value);
-            SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-            if (refPtr) {
-                SchemaMutexLocker lock;
-                d->stack.top()->add(refPtr);
-            } else {
-                debug() << "Unable to find reference:" << refStr;
-            }
-        }
-    }
-
-    else if (name == "documentation" && !d->stack.isEmpty()) {
-        if (!d->stack.isEmpty() && node->childrenSequence && node->childrenSequence->count() > 0)
-            d->stack.top()->setAnnotation(KDevelop::IndexedString(nodeText(node->childrenSequence->at(0)->element)));
-    }
-
-    else if (name == "attribute" && !d->stack.isEmpty()) {
-        AttributeAst *ref = findAttribute(node, "ref");
-        if (ref) {
-            //Dont push
-            QString refStr = nodeText(ref->value);
-            SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-            if (refPtr) {
-                SchemaMutexLocker lock;
-                d->stack.top()->add(ptr);
-            } else {
-                debug() << "Unable to find reference:" << refStr;
-            }
-        } else {
-            AttributeAst *name = findAttribute(node, "name");
-            if (name && name->value) {
-                SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
-                ptr = new SchemaAttribute(qname);
-                AttributeAst *type = findAttribute(node, "type");
-                if (type) {
-                    QString refStr = nodeText(type->value);
-                    SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
-                    if (refPtr)
-                        ptr->add(refPtr);
-                    else
-                        debug() << "Unable to find reference:" << refStr;
-                }
-                SchemaMutexLocker lock;
-                d->stack.top()->add(ptr);
-                d->stack.push(ptr);
-                d->schema->addNode(ptr);
-            }
-        }
-    }
-
-    else if (name == "enumeration" && !d->stack.isEmpty()) {
-        AttributeAst *value = findAttribute(node, "value");
-        if (value && value->value) {
-            QString enumValue = nodeText(value->value);
-            QString name = QString("{%1-enum-%2}").arg(d->stack.top()->name().str()).arg(d->stack.top()->enums().size());
-            SchemaQName qname(KDevelop::IndexedString(name), d->schema->ns());
-            SchemaEnum *e = new SchemaEnum(qname);
-            e->setValue(KDevelop::IndexedString(enumValue));
-            ptr = e;
-            SchemaMutexLocker lock;
-            d->stack.top()->add(ptr);
-            d->stack.push(ptr);
-            d->schema->addNode(ptr);
-        }
-    } else if (name == "include" && !d->stack.isEmpty()) {
-        debug();
-        /*
-        IncludeIdentifier id;
-        QString document = nodeText(attribute(node,"schemaLocation"));
-        KUrl url = CatalogHelper::resolve(QString(), document, QString(), QString(), KMimeType::Ptr(), m_document.toUrl());
-        if (url.isValid()) {
-            if(url != editor()->currentUrl().toUrl()) {
-                SchemaPtr schema = SchemaController::self()->schemaForDocument(url);
-                if (schema) {
-                    d->schema->add(schema);
+                AttributeAst *name = findAttribute(node, "name");
+                if (name && name->value) {
+                    SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
+                    ptr = new SchemaGroup(qname);
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(ptr);
+                    d->stack.push(ptr);
+                    d->schema->addNode(ptr);
                 }
             }
         }
-        */
+
+        else if (name == "simpleType" && !d->stack.isEmpty()) {
+            AttributeAst *name = findAttribute(node, "name");
+            if (name && name->value) {
+                SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
+                ptr = new SchemaSimpleType(qname);
+                SchemaMutexLocker lock;
+                d->stack.top()->add(ptr);
+                d->stack.push(ptr);
+                d->schema->addNode(ptr);
+            }
+        }
+
+        else if (name == "complexType" && !d->stack.isEmpty()) {
+            AttributeAst *name = findAttribute(node, "name");
+            if (name && name->value) {
+                SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
+                ptr = new SchemaComplexType(qname);
+                SchemaMutexLocker lock;
+                d->stack.top()->add(ptr);
+                d->stack.push(ptr);
+                d->schema->addNode(ptr);
+            }
+        }
+
+        else if (name == "attributeGroup" && !d->stack.isEmpty()) {
+            AttributeAst *ref = findAttribute(node, "ref");
+            if (ref) {
+                //Dont push
+                QString refStr = nodeText(ref->value);
+                SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                if (refPtr) {
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(refPtr);
+                } else {
+                    debug() << "Unable to find reference:" << refStr;
+                }
+            } else {
+                AttributeAst *name = findAttribute(node, "name");
+                if (name && name->value) {
+                    SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
+                    ptr = new SchemaAttributeGroup(qname);
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(ptr);
+                    d->stack.push(ptr);
+                    d->schema->addNode(ptr);
+                }
+            }
+        }
+
+        else if (name == "element" && !d->stack.isEmpty()) {
+            AttributeAst *ref = findAttribute(node, "ref");
+            if (ref) {
+                //Dont push
+                QString refStr = nodeText(ref->value);
+                SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                if (refPtr) {
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(refPtr);
+                } else {
+                    debug() << "Unable to find reference:" << refStr;
+                }
+            } else {
+                AttributeAst *name = findAttribute(node, "name");
+                if (name && name->value) {
+                    SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
+                    ptr = new SchemaElement(qname);
+                    AttributeAst *type = findAttribute(node, "type");
+                    if (type) {
+                        QString refStr = nodeText(type->value);
+                        SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                        if (refPtr)
+                            ptr->add(refPtr);
+                        else
+                            debug() << "Unable to find:" << refStr;
+                    }
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(ptr);
+                    d->stack.push(ptr);
+                    d->schema->addNode(ptr);
+                }
+            }
+        }
+
+        else if (name == "extension" && !d->stack.isEmpty()) {
+            //Dont push
+            AttributeAst *base = findAttribute(node, "base");
+            if (base && base->value) {
+                QString refStr = nodeText(base->value);
+                SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                if (refPtr) {
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(refPtr);
+                } else {
+                    debug() << "Unable to find reference:" << refStr;
+                }
+            }
+        }
+
+        else if (name == "restriction" && !d->stack.isEmpty()) {
+            //Dont push
+            AttributeAst *base = findAttribute(node, "base");
+            if (base && base->value) {
+                QString refStr = nodeText(base->value);
+                SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                if (refPtr) {
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(refPtr);
+                } else {
+                    debug() << "Unable to find reference:" << refStr;
+                }
+            }
+        }
+
+        else if (name == "documentation" && !d->stack.isEmpty()) {
+            if (!d->stack.isEmpty() && node->childrenSequence && node->childrenSequence->count() > 0)
+                d->stack.top()->setAnnotation(KDevelop::IndexedString(nodeText(node->childrenSequence->at(0)->element)));
+        }
+
+        else if (name == "attribute" && !d->stack.isEmpty()) {
+            AttributeAst *ref = findAttribute(node, "ref");
+            if (ref) {
+                //Dont push
+                QString refStr = nodeText(ref->value);
+                SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                if (refPtr) {
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(ptr);
+                } else {
+                    debug() << "Unable to find reference:" << refStr;
+                }
+            } else {
+                AttributeAst *name = findAttribute(node, "name");
+                if (name && name->value) {
+                    SchemaQName qname(KDevelop::IndexedString(nodeText(name->value)), d->schema->ns());
+                    ptr = new SchemaAttribute(qname);
+                    AttributeAst *type = findAttribute(node, "type");
+                    if (type) {
+                        QString refStr = nodeText(type->value);
+                        SchemaNodePtr refPtr = nodeForPrefixedName(refStr);
+                        if (refPtr)
+                            ptr->add(refPtr);
+                        else
+                            debug() << "Unable to find reference:" << refStr;
+                    }
+                    SchemaMutexLocker lock;
+                    d->stack.top()->add(ptr);
+                    d->stack.push(ptr);
+                    d->schema->addNode(ptr);
+                }
+            }
+        }
+
+        else if (name == "enumeration" && !d->stack.isEmpty()) {
+            AttributeAst *value = findAttribute(node, "value");
+            if (value && value->value) {
+                QString enumValue = nodeText(value->value);
+                QString name = QString("{%1-enum-%2}").arg(d->stack.top()->name().str()).arg(d->stack.top()->enums().size());
+                SchemaQName qname(KDevelop::IndexedString(name), d->schema->ns());
+                SchemaEnum *e = new SchemaEnum(qname);
+                e->setValue(KDevelop::IndexedString(enumValue));
+                ptr = e;
+                SchemaMutexLocker lock;
+                d->stack.top()->add(ptr);
+                d->stack.push(ptr);
+                d->schema->addNode(ptr);
+            }
+        } else if (name == "include" && !d->stack.isEmpty()) {
+            debug();
+            /*
+            IncludeIdentifier id;
+            QString document = nodeText(attribute(node,"schemaLocation"));
+            KUrl url = CatalogHelper::resolve(QString(), document, QString(), QString(), KMimeType::Ptr(), m_document.toUrl());
+            if (url.isValid()) {
+                if(url != editor()->currentUrl().toUrl()) {
+                    SchemaPtr schema = SchemaController::self()->schemaForDocument(url);
+                    if (schema) {
+                        d->schema->add(schema);
+                    }
+                }
+            }
+            */
+        }
     }
 
     DefaultVisitor::visitElementTag(node);
@@ -391,7 +394,7 @@ SchemaNodePtr SchemaBuilder::nodeForPrefixedName(const QString &prefixedName) co
     }
 
     SchemaMutexLocker lock;
-    
+
     SchemaNodePtr node = SchemaController::self()->node(SchemaQName(KDevelop::IndexedString(name), KDevelop::IndexedString(ns)));
 
     return node;
