@@ -21,6 +21,7 @@ set(sgmlcompletion_SRCS
     xsdcompletionsupport.cpp
     schemacompletionsupport.cpp
     dtdcompletionsupport.cpp
+    htmlcompletionsupport.cpp
 )
 
 

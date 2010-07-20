@@ -33,7 +33,10 @@ class TopDUContext;
 
 namespace Xml {
 
-class KDEVSGMLCOMPLETION_EXPORT SgmlCodeCompletionModel  : public KTextEditor::CodeCompletionModel2, public KTextEditor::CodeCompletionModelControllerInterface, public CompletionModelBase
+class KDEVSGMLCOMPLETION_EXPORT SgmlCodeCompletionModel  :
+    public KTextEditor::CodeCompletionModel2,
+    public KTextEditor::CodeCompletionModelControllerInterface,
+    public CompletionModelBase
 {
     Q_OBJECT
     Q_INTERFACES(KTextEditor::CodeCompletionModelControllerInterface)

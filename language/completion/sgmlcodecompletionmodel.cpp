@@ -418,7 +418,7 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
 
     //Close tag
     //After replacement move cursur to start of context ie <blah>|</blah>
-    if (seperator == '/' || text.startsWith('/')) {
+    if ((seperator == '/' || text.startsWith('/')) && item->getType() == CompletionItem::Element) {
         QString line = document->line(range.start().line());
         QString trimmedLine = line.mid(0, range.end().column()).remove('/');
         trimmedLine = trimmedLine.remove('<');
@@ -508,14 +508,39 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
                 }
             }
         }
-    } else if (item->getType() == CompletionItem::Entity) {
+    }
+    //Enitites
+    else if (item->getType() == CompletionItem::Entity) {
         range = growRangeRight(document, range, ";");
         range = growRangeLeft(document, range, "&");
         text = QString("&%1;").arg(text);
         document->replaceText(range, text);
         return;
     }
-
+    //Enumerations
+    else if (item->getType() == CompletionItem::Enum) {
+        QString line = document->line(range.end().line());
+        QString seps = "\"'=<>\r\n\t ";
+        for (int i = range.start().column() - 1; i >= 0; --i) {
+            if (seps.contains(line[i]))
+                break;
+            range.start().setColumn(i);
+        }
+        for (int i = range.end().column(); i < line.size(); ++i) {
+            range.end().setColumn(i);
+            if (seps.contains(line[i]))
+                break;
+        }
+        document->replaceText(range, text);
+        range.end().setColumn(range.start().column() + text.length());
+        QString growSeps = "\"'";
+        range = growRangeRight(document, range, growSeps, true);
+        foreach(View * v, document->views()) {
+            if (v->isActiveView())
+                v->setCursorPosition(range.end());
+        }
+        return;
+    }
     /* Tags
      * <xs:blah attrib=blah>      -> do not append > or />
      * <xs:blah attrib=blah1      -> do not append > or />
@@ -535,7 +560,7 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
         for (int i = range.end().column(); i < line.length(); ++i) {
             if(line[i].isSpace())
                 continue;
-            if (line[i] != '>') {
+            if (line[i] != '>' && line[i] != '<') {
                 hasfollowingContent = true;
                 break;
             }
@@ -576,10 +601,12 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
     range.end().setColumn(range.end().column() + length - rangeLength);
 
     //After replacement move cursur to end of tag/replacement ie: <blah>| or "blah|"
-    QString growSeps = "=\"'/>";
-    range = growRangeRight(document, range, growSeps);
-    if (growSeps.contains(document->character(range.end())))
-        range.end().setColumn(range.end().column() + 1);
+    if(item->getType() != CompletionItem::Other) {
+        QString growSeps = "=\"'/>";
+        range = growRangeRight(document, range, growSeps);
+        if (growSeps.contains(document->character(range.end())))
+            range.end().setColumn(range.end().column() + 1);
+    }
     foreach(View * v, document->views()) {
         if (v->isActiveView())
             v->setCursorPosition(range.end());

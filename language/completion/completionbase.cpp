@@ -31,6 +31,7 @@
 #include "dtdcompletionsupport.h"
 #include "xsdcompletionsupport.h"
 #include "schemacompletionsupport.h"
+#include "htmlcompletionsupport.h"
 
 using namespace Xml;
 using namespace KDevelop;
@@ -41,6 +42,7 @@ CompletionModelBase::CompletionModelBase()
     m_supportHelpers.append(new DtdCompletionSupport);
     m_supportHelpers.append(new SchemaCompletionSupport);
     m_supportHelpers.append(new XsdCompletionSupport);
+    m_supportHelpers.append(new HtmlCompletionSupport);
 }
 
 CompletionModelBase::~CompletionModelBase()
