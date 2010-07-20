@@ -146,7 +146,7 @@ QString SgmlFormatter::formatTag(const QString &element, const QString& newLineI
     } else
         ret += newLineIndent + list.first();
 
-   
+
 
     return ret;
 }
@@ -430,9 +430,12 @@ QString SgmlFormatter::formatSource ( const QString& text, const QString& leftCo
             //CDATA elements
             if (m_dtdHelper.cdataElement(name)) {
                 QStringRef cdata = readCdataElement(name);
-                  result << cdataHook(token, cdata.toString(), contentIndentStr);
-                  if (m_debugEnabled)
-                      debug() << "CDATA:" << cdata.toString();
+                if (!cdata.isNull() && !cdata.isEmpty() ) {
+                    QString str = cdata.toString();
+                    result << cdataHook(token, str, contentIndentStr);
+                    if (m_debugEnabled)
+                        debug() << "CDATA:" << cdata.toString();
+                }
             }
             content = "";
         }
@@ -629,9 +632,11 @@ QStringRef SgmlFormatter::readCdataElement(const QString& name)
                      QString("</%1>").arg(name),
                      IgnoreWhites | IgnoreCase,
                      &start);
-    if(end == c)
-        return QStringRef(&m_content, 0, 0);
+    if (end == c)
+        return QStringRef();
     length = start - c;
+    if((c - m_contentData) + length > m_contentDataLength)
+      length = m_contentDataLength - (c - m_contentData);
     QStringRef ref(&m_content, c - m_contentData, length);
     m_contentDataIndex += length;
     return ref;
@@ -659,10 +664,10 @@ QStringRef SgmlFormatter::nextToken(int* tokenType)
     qint64 length;
 
     *tokenType = Error;
-    if(m_contentDataIndex >= m_contentDataLength)
+    if (m_contentDataIndex >= m_contentDataLength)
         return QStringRef(&m_content, 0, 0);
     const QChar *c = &m_contentData[m_contentDataIndex];
-    if(!c || c->isNull())
+    if (!c || c->isNull())
         return QStringRef(&m_content, 0, 0);
     if (ceq(0,'<')) {
         //<!
@@ -836,14 +841,14 @@ QString SgmlFormatter::elementName(const QString& token) const
     //   ^        ^       ^        ^                     ^     ^         ^ ^
     QString name;
     QString seps = "<>/?![]";
-    for(int i = 0; i < token.size(); i++) {
-        if(token[i].isSpace() || seps.contains(token[i])) {
-            if(!name.isEmpty()) break;
+    for (int i = 0; i < token.size(); i++) {
+        if (token[i].isSpace() || seps.contains(token[i])) {
+            if (!name.isEmpty()) break;
             continue;
         }
         name += token[i];
     }
-    if(name.isEmpty())
+    if (name.isEmpty())
         debug() << "Element name match failed:" << token;
     return name;
 }
