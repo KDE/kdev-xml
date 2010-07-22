@@ -655,7 +655,7 @@ QStringRef SgmlFormatter::nextToken(int* tokenType)
     length = end - c;\
     m_contentDataIndex += length;\
     if(m_contentDataIndex > m_contentDataLength)\
-      length = length - m_contentDataIndex - m_contentDataLength;\
+      length -= m_contentDataIndex - m_contentDataLength;\
     *tokenType = T;\
     return QStringRef(&m_content, c - m_contentData, length);
 
@@ -721,7 +721,7 @@ QStringRef SgmlFormatter::nextToken(int* tokenType)
         length = end - c;
         m_contentDataIndex += length;
         if (m_contentDataIndex > m_contentDataLength)
-            length = length - m_contentDataIndex - m_contentDataLength;
+            length -= m_contentDataIndex - m_contentDataLength;
         QStringRef ref(&m_content, c - m_contentData, length);
         if (ref.at(ref.length()-1).unicode() == '<')
             *tokenType = Error;
