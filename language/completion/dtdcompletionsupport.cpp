@@ -60,6 +60,21 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findAll(KTextEditor::Document
     tc = DUChain::self()->chainForDocument(document->url());
     if (!tc) return items.values();
 
+    foreach(DUContext::Import i, tc->importedParentContexts()) {
+        if (DUContext* ctx = i.indexedContext().context()) {
+            foreach(Declaration* d, ctx->localDeclarations()) {
+                if (d->kind() == Declaration::Type) {
+                    ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(d);
+                    if (!elementDec || elementDec->elementType() != ElementDeclarationData::Element) continue;
+                    QString name = elementDec->name().str();
+                    bool empty = elementDec->contentType().str().toUpper() == "EMPTY";
+                    items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 10, CompletionItem::Element, empty)));
+                    break;
+                }
+            }
+        }
+    }
+
     QList< Declaration* > declarations;
     walkChain(tc, declarations);
 
@@ -70,7 +85,9 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findAll(KTextEditor::Document
             if (!elementDec || elementDec->elementType() != ElementDeclarationData::Element) continue;
             QString name = elementDec->name().str();
             bool empty = elementDec->contentType().str().toUpper() == "EMPTY";
-            items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 0, CompletionItem::Element, empty)));
+            if (!items.contains(name)) {
+                items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 0, CompletionItem::Element, empty)));
+            }
         }
     }
 
