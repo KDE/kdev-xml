@@ -14,5 +14,6 @@ kde4_add_unit_test( oasiscatalogtest ${xmlcatalogtest_SRCS} )
 target_link_libraries( oasiscatalogtest
     ${QT_QTTEST_LIBRARY}
     ${KDE4_KDEUI_LIBS}
+    ${QT_QTXML_LIBRARY}
     kdevxmlcatalog
 )
