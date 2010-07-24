@@ -134,10 +134,10 @@ public:
             if(!typeDec->content().isEmpty())
                 modifyHtml() += i18n("Content: ") + Qt::escape(typeDec->content().str()) + "<br/>";
             if(typeDec->attributesSize() > 0) {
-                modifyHtml() += propertyHighlight(i18n("Attributes:&nbsp;"));
+                modifyHtml() += propertyHighlight(i18n("Available Attributes:&nbsp;"));
                 for(int i = 0; i < typeDec->attributesSize(); i++) {
                     if(i < typeDec->attributesSize() - 1)
-                        modifyHtml() += typeDec->attributes()[i].str() + ",&nbsp;";
+                        modifyHtml() += typeDec->attributes()[i].str() + ", ";
                     else
                         modifyHtml() += typeDec->attributes()[i].str() + " ";
                 }
@@ -146,11 +146,11 @@ public:
             if(typeDec->internalContext()) {
                 QVector<KDevelop::Declaration *> declarations = typeDec->internalContext()->localDeclarations();
                     if(declarations.size() > 0) {
-                    modifyHtml() += propertyHighlight(i18n("Children:&nbsp;"));
+                    modifyHtml() += propertyHighlight(i18n("Available Children:&nbsp;"));
                     for(int i = 0; i < declarations.size(); i++) {
                         if(declarations[i] && declarations[i]->kind() == KDevelop::Declaration::Instance) {
                             if(i < declarations.size() - 1)
-                                modifyHtml() += declarations[i]->identifier().toString() + ",&nbsp;";
+                                modifyHtml() += declarations[i]->identifier().toString() + ", ";
                             else
                                 modifyHtml() += declarations[i]->identifier().toString() + " ";
                         }
