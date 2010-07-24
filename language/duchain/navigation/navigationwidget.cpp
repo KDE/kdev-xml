@@ -46,6 +46,8 @@ public:
     }
 
     virtual QString html(bool shorten = false) {
+        clear();
+
         KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
 
         //TODO a propper unresolved identifier
