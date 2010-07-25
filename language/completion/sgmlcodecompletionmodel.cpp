@@ -208,7 +208,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
                   && !_ctx->localDeclarations().isEmpty())
             {
                 ElementDeclaration* dec = dynamic_cast<ElementDeclaration*>(_ctx->localDeclarations().last());
-                if (dec && dec->kind() == ElementDeclarationData::CloseTag) {
+                if (dec && dec->elementType() == ElementDeclarationData::CloseTag) {
                     alreadyClosed = true;
                 }
             }
