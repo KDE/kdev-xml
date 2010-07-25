@@ -204,12 +204,26 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
             TopDUContext* ctx = DUChain::self()->chainForDocument(url);
             DUContext* _ctx = ctx->findContextAt(SimpleCursor(range.start().line(), range.start().column()));
             bool alreadyClosed = false;
-            if (_ctx && _ctx->localScopeIdentifier().toString() == visitor.contextName()
-                  && !_ctx->localDeclarations().isEmpty())
-            {
-                ElementDeclaration* dec = dynamic_cast<ElementDeclaration*>(_ctx->localDeclarations().last());
-                if (dec && dec->elementType() == ElementDeclarationData::CloseTag) {
-                    alreadyClosed = true;
+            if (_ctx && _ctx->localScopeIdentifier().toString() == visitor.contextName() ) {
+                /// HACK: see problem below, remove while once fixed
+                QVector< Declaration* > decs = _ctx->localDeclarations();
+                while ( !alreadyClosed && !decs.isEmpty() )
+                {
+                    ElementDeclaration* dec = dynamic_cast<ElementDeclaration*>(_ctx->localDeclarations().last());
+                    if (dec && dec->elementType() == ElementDeclarationData::CloseTag
+                        /// TODO: remove this once the DUChain is build properly...
+                        /// for code like; <parent><child></parent>
+                        /// the duchain will have </parent> as child of <child> which is of course wrong...
+                        && dec->name().str() == visitor.contextName())
+                    {
+                        alreadyClosed = true;
+                        break;
+                    } else if (!_ctx->childContexts().isEmpty()) {
+                        _ctx = _ctx->childContexts().last();
+                        decs = _ctx->localDeclarations();
+                    } else {
+                        break;
+                    }
                 }
             }
             if (!alreadyClosed) {
