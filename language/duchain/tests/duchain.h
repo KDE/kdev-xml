@@ -34,6 +34,7 @@ private slots:
     void testXmlContext();
     void testSgmlContext();
     void testEmptyDTDAttlist();
+    void testUnclosedChild();
 };
 
 }

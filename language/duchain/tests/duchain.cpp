@@ -26,6 +26,8 @@
 #include <language/duchain/topducontext.h>
 #include <language/duchain/declaration.h>
 
+#include "elementdeclaration.h"
+
 QTEST_MAIN(Xml::TestDUChain)
 
 namespace Xml
@@ -81,6 +83,20 @@ void TestDUChain::testEmptyDTDAttlist()
   DUChainReleaser releaseTop(top);
 }
 
+void TestDUChain::testUnclosedChild()
+{
+  QByteArray method("<parent><child></parent>");
+  KDevelop::TopDUContext* top = parse(method, DumpAll);
+  DUChainReleaser releaseTop(top);
+
+  KDevelop::DUChainReadLocker lock;
+  QEXPECT_FAIL("", "the close tag declaration is added to <child> since that one is not closed...", Abort);
+  QCOMPARE(top->childContexts().first()->localDeclarations().count(), 2);
+  ElementDeclaration* close = dynamic_cast<ElementDeclaration*>(top->childContexts().first()->localDeclarations().last());
+  QVERIFY(close);
+  QCOMPARE(close->elementType(), ElementDeclarationData::CloseTag);
+  QCOMPARE(close->name().str(), QString("parent"));
+}
 
 }
 
