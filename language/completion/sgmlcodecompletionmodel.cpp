@@ -198,8 +198,27 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     }
     //Complete tags
     else if (visitor.context) {
-        if ((esc.endsWith("/") || esc.endsWith(">") || esc.startsWith("</")) && !esc.endsWith("/>"))
-            m_items.append(CompletionItem::Ptr(new CompletionItem(QString("/%1").arg(visitor.contextPrettyName()), 10, CompletionItem::Element)));
+        if ((esc.endsWith("/") || esc.endsWith(">") || esc.startsWith("</")) && !esc.endsWith("/>")) {
+            // add closing tag item, if it's not already closed
+            DUChainReadLocker lock;
+            TopDUContext* ctx = DUChain::self()->chainForDocument(url);
+            DUContext* _ctx = ctx->findContextAt(SimpleCursor(range.start().line(), range.start().column()));
+            bool alreadyClosed = false;
+            if (_ctx && _ctx->localScopeIdentifier().toString() == visitor.contextName()
+                  && !_ctx->localDeclarations().isEmpty())
+            {
+                ElementDeclaration* dec = dynamic_cast<ElementDeclaration*>(_ctx->localDeclarations().last());
+                if (dec && dec->kind() == ElementDeclarationData::CloseTag) {
+                    alreadyClosed = true;
+                }
+            }
+            if (!alreadyClosed) {
+                m_items.append(CompletionItem::Ptr(
+                    new CompletionItem(QString("/%1").arg(visitor.contextPrettyName()),
+                                       10, CompletionItem::Element))
+                );
+            }
+        }
         QHash<QString, CompletionItem::Ptr> items;
         QList<CompletionItem::Ptr> list = findChildElements(view->document(), range, visitor.contextPrettyName(), visitor.elementNsPrefix());
         foreach(CompletionItem::Ptr i, list) {
