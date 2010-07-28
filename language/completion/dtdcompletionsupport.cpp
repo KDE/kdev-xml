@@ -60,19 +60,25 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findAll(KTextEditor::Document
     tc = DUChain::self()->chainForDocument(document->url());
     if (!tc) return items.values();
 
-    foreach(DUContext::Import i, tc->importedParentContexts()) {
-        if (DUContext* ctx = i.indexedContext().context()) {
-            foreach(Declaration* d, ctx->localDeclarations()) {
-                if (d->kind() == Declaration::Type) {
-                    ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(d);
-                    if (!elementDec || elementDec->elementType() != ElementDeclarationData::Element) continue;
-                    QString name = elementDec->name().str();
-                    bool empty = elementDec->contentType().str().toUpper() == "EMPTY";
-                    items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 10, CompletionItem::Element, empty)));
-                    break;
+    if (document->mimeType() != "text/html") {
+        ///TODO: actually find the root node, this is just a guess
+        foreach(DUContext::Import i, tc->importedParentContexts()) {
+            if (DUContext* ctx = i.indexedContext().context()) {
+                foreach(Declaration* d, ctx->localDeclarations()) {
+                    if (d->kind() == Declaration::Type) {
+                        ElementDeclaration *elementDec = dynamic_cast<ElementDeclaration *>(d);
+                        if (!elementDec || elementDec->elementType() != ElementDeclarationData::Element) continue;
+                        QString name = elementDec->name().str();
+                        bool empty = elementDec->contentType().str().toUpper() == "EMPTY";
+                        debug() << name;
+                        items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 10, CompletionItem::Element, empty)));
+                        break;
+                    }
                 }
             }
         }
+    } else {
+        items.insert("html", CompletionItem::Ptr(new CompletionItem("html", 10, CompletionItem::Element, false)));
     }
 
     QList< Declaration* > declarations;
