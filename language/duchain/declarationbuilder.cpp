@@ -19,6 +19,7 @@
 #include "editorintegrator.h"
 #include "parsesession.h"
 #include "elementdeclaration.h"
+#include "importdeclaration.h"
 #include "../language_debug.h"
 
 #include <xmlcatalog/cataloghelper.h>
@@ -90,14 +91,17 @@ KDevelop::Declaration* DeclarationBuilder::createImportDeclaration(const QString
     KDevelop::TopDUContext *includedCtx = KDevelop::DUChain::self()->chainForDocument(url);
     if ( !includedCtx ) {
         // invalid include
-        return NULL;
+        debug() << "no context found for import:" << identifier;
+        return 0;
     }
 
     //Create in topcontext
     injectContext(editor()->smart(),currentContext()->topContext());
 
-    KDevelop::Declaration* dec = openDefinition<KDevelop::Declaration>(id, range);
-    dec->setKind(KDevelop::Declaration::Import);
+    ///NOTE: this is quite hacky
+    ///actually a declaration in includedCtx should be created (or reused) with range (0,0,0,0)
+    ///then a UseBuilder would build a use of that declaration
+    KDevelop::Declaration* dec = openDefinition<ImportDeclaration>(id, range);
     injectContext(editor()->smart(), includedCtx);
     eventuallyAssignInternalContext();
     closeInjectedContext(editor()->smart());

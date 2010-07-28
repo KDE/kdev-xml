@@ -41,6 +41,7 @@ set(parser_STAT_SRCS
 
 set( duchain_SRCS
     elementdeclaration.cpp
+    importdeclaration.cpp
     declarationbuilder.cpp
     contextbuilder.cpp
     schemabuilder.cpp

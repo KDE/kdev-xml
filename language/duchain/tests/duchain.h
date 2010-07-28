@@ -35,6 +35,7 @@ private slots:
     void testSgmlContext();
     void testEmptyDTDAttlist();
     void testUnclosedChild();
+    void testDoctype();
 };
 
 }

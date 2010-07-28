@@ -27,6 +27,7 @@
 #include <language/duchain/declaration.h>
 
 #include "elementdeclaration.h"
+#include "importdeclaration.h"
 
 QTEST_MAIN(Xml::TestDUChain)
 
@@ -96,6 +97,25 @@ void TestDUChain::testUnclosedChild()
   QVERIFY(close);
   QCOMPARE(close->elementType(), ElementDeclarationData::CloseTag);
   QCOMPARE(close->name().str(), QString("parent"));
+}
+
+void TestDUChain::testDoctype()
+{
+    QByteArray dtd("<!ENTITY foo \"bar\" >");
+    KDevelop::TopDUContext* dtdCtx = parse(dtd, DumpAll, "/internal/test.dtd");
+    QVERIFY(dtdCtx);
+    DUChainReleaser releaseDtdCtx(dtdCtx);
+
+    QByteArray xml("<!DOCTYPE test SYSTEM \"test.dtd\">");
+    KDevelop::TopDUContext* xmlCtx = parse(xml, DumpAll);
+    DUChainReleaser releaseXmlCtx(xmlCtx);
+
+    KDevelop::DUChainReadLocker lock;
+    QCOMPARE(xmlCtx->findDeclarations(QualifiedIdentifier("/internal/test.dtd")).count(), 1);
+    QCOMPARE(xmlCtx->localDeclarations().count(), 1);
+    QVERIFY(dynamic_cast<ImportDeclaration*>(xmlCtx->localDeclarations().first()));
+    QCOMPARE(xmlCtx->localDeclarations().first()->kind(), Declaration::Import);
+    QCOMPARE(xmlCtx->localDeclarations().first()->url().str(), QString("/internal/test.dtd"));
 }
 
 }
