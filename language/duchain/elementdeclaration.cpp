@@ -29,6 +29,7 @@ ElementDeclarationData::ElementDeclarationData()
 {
     initializeAppendedLists();
     closeTagRequired = true;
+    openTagRequired = true;
     elementType = Element;
 }
 
@@ -37,6 +38,7 @@ ElementDeclarationData::ElementDeclarationData(const Xml::ElementDeclarationData
     initializeAppendedLists();
     copyListsFrom(rhs);
     closeTagRequired = rhs.closeTagRequired;
+    openTagRequired = rhs.openTagRequired;
     name = rhs.name;
     contentType = rhs.contentType;
     elementType = rhs.elementType;
@@ -103,6 +105,16 @@ void ElementDeclaration::setCloseTagRequired(bool required)
 bool ElementDeclaration::closeTagRequired() const
 {
     return d_func()->closeTagRequired;
+}
+
+void ElementDeclaration::setOpenTagRequired(bool required)
+{
+    d_func_dynamic()->openTagRequired = required;
+}
+
+bool ElementDeclaration::openTagRequired() const
+{
+    return d_func()->openTagRequired;
 }
 
 void ElementDeclaration::setContentType(const IndexedString& ct)

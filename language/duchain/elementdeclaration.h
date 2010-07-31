@@ -54,8 +54,9 @@ public:
     IndexedString namespacePrefix;
     IndexedString contentType;
     IndexedString content;
-    bool closeTagRequired;
     ElementType elementType;
+    bool closeTagRequired : 1;
+    bool openTagRequired : 1;
 
     START_APPENDED_LISTS_BASE(ElementDeclarationData, ClassDeclarationData);
     APPENDED_LIST_FIRST(ElementDeclarationData, IndexedString, m_attributes);
@@ -108,6 +109,9 @@ public:
 
     bool closeTagRequired() const;
     void setCloseTagRequired(bool required);
+
+    bool openTagRequired() const;
+    void setOpenTagRequired(bool required);
 
     virtual const IndexedString* attributes() const;
     virtual unsigned int attributesSize() const;

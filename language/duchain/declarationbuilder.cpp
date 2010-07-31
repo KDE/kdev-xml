@@ -192,6 +192,9 @@ void DeclarationBuilder::visitDtdElement(DtdElementAst* node)
             if (node->closeTag && editor()->parseSession()->tokenStream()->token(node->closeTag).kind == Parser::Token_OPT) {
                 dec->setCloseTagRequired(false);
             }
+            if (node->openTag && editor()->parseSession()->tokenStream()->token(node->openTag).kind == Parser::Token_OPT) {
+                dec->setOpenTagRequired(false);
+            }
             m_dtdElements.insert(element.first.toLower(), dec);
         }
         //TODO visitDtdElementList: there should be an indication if its choice or sequence for now its just a list.

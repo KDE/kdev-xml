@@ -157,6 +157,47 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findAttributes(
     return items.values();
 }
 
+/**
+ * Recursivly get all children that can be inserted at this point. Honor optional open tags,
+ * which essentially make the whole tag optional. Examples are e.g. tbody, thead and tfoot
+ * which are all optional in a table tag.
+ */
+void getChildrenInternal(QHash<QString, CompletionItem::Ptr>& items, DUContext* ctx, const Identifier& element)
+{
+    QList<Declaration *> decs = ctx->findDeclarations(element, SimpleCursor::invalid());
+
+    foreach(Declaration * dc, decs) {
+        if (!dc || dc->kind() != Declaration::Type || !dc->internalContext())
+            continue;
+        foreach(Declaration * d, dc->internalContext()->localDeclarations()) {
+            if (!d || d->kind() != Declaration::Instance) continue;
+            ElementDeclaration * elementDec = dynamic_cast<ElementDeclaration *>(d);
+            if (!elementDec) continue;
+            QString name = elementDec->name().str();
+            if (items.contains(name)) {
+                continue;
+            }
+            bool empty = false;
+            Identifier id = elementDec->identifier();
+            //Find its type, this would normaly be done through a use builder
+            QList<Declaration *> decList = ctx->findDeclarations(id, SimpleCursor::invalid());
+            foreach(Declaration * dc, decList) {
+                if (!dc || dc->kind() != Declaration::Type || !dc->internalContext() || dc->identifier() != id)
+                continue;
+                elementDec = dynamic_cast<ElementDeclaration *>(dc);
+                if(!elementDec) continue;
+                empty = elementDec->contentType().str().toUpper() == "EMPTY";
+            }
+            if (!name.startsWith("#")) {
+                items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 0, CompletionItem::Element, empty)));
+                if (!elementDec->openTagRequired() && elementDec->internalContext()) {
+                    getChildrenInternal(items, elementDec->internalContext(), id);
+                }
+            }
+        }
+    }
+}
+
 QList< CompletionItem::Ptr > DtdCompletionSupport::findChildElements(
     Document* document,
     const KTextEditor::Range& range,
@@ -168,7 +209,6 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findChildElements(
     DUContext * ctx = 0;
     Declaration *dec = 0;
     QString elementName = element;
-    QList<Declaration *> decs;
     TopDUContext * tc = 0;
     QHash<QString, CompletionItem::Ptr > items;
 
@@ -186,32 +226,7 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findChildElements(
         elementName = dec->identifier().toString();
     }
 
-    decs.append(tc->findDeclarations(Identifier(elementName.toLower()), SimpleCursor::invalid(), tc));
-
-    foreach(Declaration * dc, decs) {
-        if (!dc || dc->kind() != Declaration::Type || !dc->internalContext())
-            continue;
-        foreach(Declaration * d, dc->internalContext()->localDeclarations()) {
-            if (!d || d->kind() != Declaration::Instance) continue;
-            ElementDeclaration * elementDec = dynamic_cast<ElementDeclaration *>(d);
-            if (!elementDec) continue;
-            QString name = elementDec->name().str();
-            bool empty = false;
-            Identifier id = elementDec->identifier();
-            //Find its type, this would normaly be done through a use builder
-            QList<Declaration *> decList = tc->findDeclarations(id, SimpleCursor::invalid(), tc);
-            foreach(Declaration * dc, decList) {
-                if (!dc || dc->kind() != Declaration::Type || !dc->internalContext() || dc->identifier() != id)
-                continue;
-                elementDec = dynamic_cast<ElementDeclaration *>(dc);
-                if(!elementDec) continue;
-                empty = elementDec->contentType().str().toUpper() == "EMPTY";
-            }
-            if (!name.startsWith("#"))
-                items.insert(name, CompletionItem::Ptr(new CompletionItem(name, 10, CompletionItem::Element, empty)));
-        }
-    }
-
+    getChildrenInternal(items, tc, Identifier(elementName.toLower()));
     return items.values();
 }
 

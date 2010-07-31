@@ -233,18 +233,8 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
                 );
             }
         }
-        QHash<QString, CompletionItem::Ptr> items;
         QList<CompletionItem::Ptr> list = findChildElements(view->document(), range, visitor.contextPrettyName(), visitor.elementNsPrefix());
-        foreach(CompletionItem::Ptr i, list) {
-            items.insert(i->getName(), i);
-        }
-        list = findAll(view->document(), range);
-        foreach(CompletionItem::Ptr i, list) {
-            if (!items.contains(i->getName())) {
-                items.insert(i->getName(), i);
-            }
-        }
-        m_items.append(items.values());
+        m_items.append(list);
     }
     //Add all
     else {
