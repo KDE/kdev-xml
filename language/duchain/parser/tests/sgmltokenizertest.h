@@ -20,10 +20,12 @@
 
 #include <QObject>
 
+#include "tests/duchaintestbase.h"
+
 namespace Xml
 {
 
-class TestSgmlTokenizer : public QObject
+class TestSgmlTokenizer : public DUChainTestBase
 {
     Q_OBJECT
 
@@ -31,13 +33,16 @@ public:
     TestSgmlTokenizer();
 
 private Q_SLOTS:
-    
+    void testDoctype_data();
     void testDoctype();
+    void testElementName_data();
     void testElementName();
     void testReadUntill();
     void testReadUntillAny();
     void testReadWhileAny();
+    void testSgmlTokenizer_data();
     void testSgmlTokenizer();
+    void testDTDTokenizer_data();
     void testDTDTokenizer();
     void testDTDEntity();
     void testTokenizerForFun();

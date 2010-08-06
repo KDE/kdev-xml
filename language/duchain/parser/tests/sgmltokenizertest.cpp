@@ -21,64 +21,75 @@
 
 #include <QTest>
 #include <dtdtokenizer.h>
+#include <sgmltokentext.h>
 
 QTEST_MAIN(Xml::TestSgmlTokenizer)
+
+typedef QList<Xml::Parser::TokenType> TokenList;
+
+Q_DECLARE_METATYPE(TokenList)
 
 namespace Xml
 {
 
 TestSgmlTokenizer::TestSgmlTokenizer()
 {
+    qRegisterMetaType< TokenList >("TokenList");
+}
+
+void TestSgmlTokenizer::testDoctype_data()
+{
+    QTest::addColumn<QString>("token");
+    QTest::addColumn<QString>("expectedName");
+    QTest::addColumn<QString>("expectedPublicId");
+    QTest::addColumn<QString>("expectedSystemId");
+
+    QTest::newRow("doctype-html5") << "<!doctype html>" << "html" << "" << "";
+    QTest::newRow("doctype-public") << "<!DOCTYPE html PUBLIC \"publicId\">" << "html" << "publicId" << "";
+    QTest::newRow("doctype-public-system") << "<!DOCTYPE html PUBLIC \"publicId\" \"systemId\">" << "html" << "publicId" << "systemId";
+    QTest::newRow("doctype-system") << "<!DOCTYPE html SYSTEM \"systemId\">" << "html" << "" << "systemId";
+    //TODO: anything else to check?
+    QTest::newRow("doctype-system-emtpy") << "<!DOCTYPE html SYSTEM>" << "html" << "" << "";
 }
 
 void TestSgmlTokenizer::testDoctype()
 {
+    QFETCH(QString, token);
+    QFETCH(QString, expectedName);
+    QFETCH(QString, expectedPublicId);
+    QFETCH(QString, expectedSystemId);
+
     SgmlTokenizer tokenizer(NULL,"");
-    QString token1 = "<!doctype html>";
-    QString token2 = "<!DOCTYPE html PUBLIC \"publicId\">";
-    QString token3 = "<!DOCTYPE html PUBLIC \"publicId\" \"systemId\">";
-    QString token4 = "<!DOCTYPE html SYSTEM \"systemId\">";
-    QString token5 = "<!DOCTYPE html SYSTEM>";
     QString name;
     QString publicId;
     QString systemId;
-    tokenizer.doctype(token1, name, publicId, systemId);
-    if(name != "html")
-        QFAIL(QString("EXPECTED 'html' GOT '%1'").arg(name).toAscii().constData());
+    tokenizer.doctype(token, name, publicId, systemId);
+    QCOMPARE(name, expectedName);
+    QCOMPARE(publicId, expectedPublicId);
+    QCOMPARE(systemId, expectedSystemId);
+}
 
-    tokenizer.doctype(token2, name, publicId, systemId);
-    if(publicId != "publicId")
-        QFAIL(QString("EXPECTED 'publicId' GOT '%1'").arg(publicId).toAscii().constData());
+void TestSgmlTokenizer::testElementName_data()
+{
+  QTest::addColumn<QString>("code");
+  QTest::addColumn<QString>("name");
 
-    tokenizer.doctype(token3, name, publicId, systemId);
-    if(systemId != "systemId")
-        QFAIL(QString("EXPECTED 'systemId' GOT '%1'").arg(systemId).toAscii().constData());
-
-    tokenizer.doctype(token4, name, publicId, systemId);
-    if(systemId != "systemId")
-        QFAIL(QString("EXPECTED 'systemId' GOT '%1'").arg(systemId).toAscii().constData());
-
-    tokenizer.doctype(token5, name, publicId, systemId);
-    if(name != "html")
-        QFAIL(QString("EXPECTED 'html' GOT '%1'").arg(name).toAscii().constData());
+  QTest::newRow("open") << "<foo>" << "foo";
+  QTest::newRow("close") << "</foo>" << "foo";
+  QTest::newRow("open-ns") << "<ns:tagName>" << "ns:tagName";
+  QTest::newRow("open-ns-empty") << "<ns:tagName/>" << "ns:tagName";
+  QTest::newRow("open-ns-attrib") << "<ns:tagName attrib='value'/>" << "ns:tagName";
+  QTest::newRow("close-ns") << "</ns:tagName >" << "ns:tagName";
+  QTest::newRow("close-ns-whitespace") << "</\r\n\t ns:tagName >" << "ns:tagName";
 }
 
 void TestSgmlTokenizer::testElementName()
 {
-
+    QFETCH(QString, code);
+    QFETCH(QString, name);
     SgmlTokenizer tokenizer(NULL,"");
-    QString tagName = tokenizer.elementName("<ns:tagName attrib='value'/>");
-    if(tagName != "tagName") {
-         QFAIL(QString("EXPECTED 'TAGNAME' GOT '%1'").arg(tagName).toAscii().constData());
-    }
-    tagName = tokenizer.elementName("</\r\n\t ns:tagName >");
-    if(tagName != "tagName") {
-         QFAIL(QString("EXPECTED 'tagName' GOT '%1'").arg(tagName).toAscii().constData());
-    }
-    tagName = tokenizer.elementName("</tagName>");
-    if(tagName != "tagName") {
-         QFAIL(QString("EXPECTED 'tagName' GOT '%1'").arg(tagName).toAscii().constData());
-    }
+    QString tagName = tokenizer.elementName(code);
+    QCOMPARE(tagName, name);
 }
 
 void TestSgmlTokenizer::testReadUntill()
@@ -132,207 +143,221 @@ void TestSgmlTokenizer::testReadWhileAny()
     tokenizer.readWhileAny(test.data(), test.data()+test.length(), "<![ CDATA ] ] >", SgmlTokenizer::IgnoreWhites, &start);
 
 }
+void TestSgmlTokenizer::testDTDTokenizer_data()
+{
+    QTest::addColumn<QString>("code");
+    QTest::addColumn<TokenList>("tokens");
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_DOCTYPE);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_PUBLIC);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!doctype root PUBLIC \"uri\" \"uri\">" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ELEMENT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_OPAREN);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_COMMA);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_QUESTION);
+    tokens.append(Parser::Token_CPAREN);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ELEMENT direction (left,top?)>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ELEMENT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ELEMENT HR EMPTY>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ELEMENT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_OPAREN);
+    tokens.append(Parser::Token_NUMBER);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_VBAR);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_CPAREN);
+    tokens.append(Parser::Token_ASTERISK);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ELEMENT p (#PCDATA|I)*>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ELEMENT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_HYPHEN);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_OPT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ELEMENT P - O EMPTY>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ATTLIST); //<!ATTLIST
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT); //OPTIONS
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT); //ID
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT); //CDATA
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_NUMBER); //#
+    tokens.append(Parser::Token_TEXT); //IMPLIED
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT); //NUMBER
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT); //CDATA
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_NUMBER); //#
+    tokens.append(Parser::Token_TEXT); //IMPLIED
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ATTLIST OPTIONS ID CDATA #IMPLIED NUMBER CDATA #IMPLIED>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ATTLIST);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_OPAREN);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_VBAR);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_CPAREN);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ATTLIST WHERE CITY (JHB|PTA) 'JHB'--junk-->" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ELEMENT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_OPAREN);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_VBAR);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_CPAREN);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_HYPHEN);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_OPT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ELEMENT (SUB|SUP) - O EMPTY>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ATTLIST);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ATTLIST user role CDATA 'guest'>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ELEMENT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_OPAREN);
+    tokens.append(Parser::Token_OPAREN);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_VBAR);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_CPAREN);
+    tokens.append(Parser::Token_ASTERISK);
+    tokens.append(Parser::Token_COMMA);
+    tokens.append(Parser::Token_OPAREN);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_COMMA);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_ASTERISK);
+    tokens.append(Parser::Token_CPAREN);
+    tokens.append(Parser::Token_CPAREN);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ELEMENT name1 ((name2|name3)*,(name4,name5*))>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_ATTLIST);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_PERCENT);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_SEMICOLON);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("") << "<!ATTLIST TITLE %i18n;>" << tokens;
+    }
+}
 
 void TestSgmlTokenizer::testDTDTokenizer()
 {
-    QHash<QString, QList<Parser::TokenType> > tests;
+    QFETCH(QString, code);
+    QFETCH(TokenList, tokens);
 
-    QList<Parser::TokenType> tokens1;
-    tokens1.append(Parser::Token_DOCTYPE);
-    tokens1.append(Parser::Token_WHITE);
-    tokens1.append(Parser::Token_TEXT);
-    tokens1.append(Parser::Token_WHITE);
-    tokens1.append(Parser::Token_PUBLIC);
-    tokens1.append(Parser::Token_WHITE);
-    tokens1.append(Parser::Token_QUOTE);
-    tokens1.append(Parser::Token_TEXT);
-    tokens1.append(Parser::Token_QUOTE);
-    tokens1.append(Parser::Token_WHITE);
-    tokens1.append(Parser::Token_QUOTE);
-    tokens1.append(Parser::Token_TEXT);
-    tokens1.append(Parser::Token_QUOTE);
-    tokens1.append(Parser::Token_GT);
-    tests.insert("<!doctype root PUBLIC \"uri\" \"uri\">", tokens1);
-
-    QList<Parser::TokenType> tokens2;
-    tokens2.append(Parser::Token_ELEMENT);
-    tokens2.append(Parser::Token_WHITE);
-    tokens2.append(Parser::Token_TEXT);
-    tokens2.append(Parser::Token_WHITE);
-    tokens2.append(Parser::Token_OPAREN);
-    tokens2.append(Parser::Token_TEXT);
-    tokens2.append(Parser::Token_COMMA);
-    tokens2.append(Parser::Token_TEXT);
-    tokens2.append(Parser::Token_QUESTION);
-    tokens2.append(Parser::Token_CPAREN);
-    tokens2.append(Parser::Token_GT);
-    tests.insert("<!ELEMENT direction (left,top?)>", tokens2);
-
-    QList<Parser::TokenType> tokens3;
-    tokens3.append(Parser::Token_ELEMENT);
-    tokens3.append(Parser::Token_WHITE);
-    tokens3.append(Parser::Token_TEXT);
-    tokens3.append(Parser::Token_WHITE);
-    tokens3.append(Parser::Token_TEXT);
-    tokens3.append(Parser::Token_GT);
-    tests.insert("<!ELEMENT HR EMPTY>", tokens3);
-
-    QList<Parser::TokenType> tokens4;
-    tokens4.append(Parser::Token_ELEMENT);
-    tokens4.append(Parser::Token_WHITE);
-    tokens4.append(Parser::Token_TEXT);
-    tokens4.append(Parser::Token_WHITE);
-    tokens4.append(Parser::Token_OPAREN);
-    tokens4.append(Parser::Token_NUMBER);
-    tokens4.append(Parser::Token_TEXT);
-    tokens4.append(Parser::Token_VBAR);
-    tokens4.append(Parser::Token_TEXT);
-    tokens4.append(Parser::Token_CPAREN);
-    tokens4.append(Parser::Token_ASTERISK);
-    tokens4.append(Parser::Token_GT);
-    tests.insert("<!ELEMENT p (#PCDATA|I)*>", tokens4);
-
-    QList<Parser::TokenType> tokens5;
-    tokens5.append(Parser::Token_ELEMENT);
-    tokens5.append(Parser::Token_WHITE);
-    tokens5.append(Parser::Token_TEXT);
-    tokens5.append(Parser::Token_WHITE);
-    tokens5.append(Parser::Token_HYPHEN);
-    tokens5.append(Parser::Token_WHITE);
-    tokens5.append(Parser::Token_OPT);
-    tokens5.append(Parser::Token_WHITE);
-    tokens5.append(Parser::Token_TEXT);
-    tokens5.append(Parser::Token_GT);
-    tests.insert("<!ELEMENT P - O EMPTY>", tokens5);
-
-    QList<Parser::TokenType> tokens6;
-    tokens6.append(Parser::Token_ATTLIST); //<!ATTLIST
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_TEXT); //OPTIONS
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_TEXT); //ID
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_TEXT); //CDATA
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_NUMBER); //#
-    tokens6.append(Parser::Token_TEXT); //IMPLIED
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_TEXT); //NUMBER
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_TEXT); //CDATA
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_NUMBER); //#
-    tokens6.append(Parser::Token_TEXT); //IMPLIED
-    tokens6.append(Parser::Token_GT);
-    tests.insert("<!ATTLIST OPTIONS ID CDATA #IMPLIED NUMBER CDATA #IMPLIED>", tokens6);
-
-    QList<Parser::TokenType> tokens7;
-    tokens7.append(Parser::Token_ATTLIST);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_OPAREN);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_VBAR);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_CPAREN);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_QUOTE);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_QUOTE);
-    tokens7.append(Parser::Token_GT);
-    tests.insert("<!ATTLIST WHERE CITY (JHB|PTA) 'JHB'--junk-->", tokens7);
-
-    QList<Parser::TokenType> tokens8;
-    tokens8.append(Parser::Token_ELEMENT);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_OPAREN);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_VBAR);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_CPAREN);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_HYPHEN);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_OPT);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_GT);
-    tests.insert("<!ELEMENT (SUB|SUP) - O EMPTY>",  tokens8);
-
-    QList<Parser::TokenType> tokens9;
-    tokens9.append(Parser::Token_ATTLIST);
-    tokens9.append(Parser::Token_WHITE);
-    tokens9.append(Parser::Token_TEXT);
-    tokens9.append(Parser::Token_WHITE);
-    tokens9.append(Parser::Token_TEXT);
-    tokens9.append(Parser::Token_WHITE);
-    tokens9.append(Parser::Token_TEXT);
-    tokens9.append(Parser::Token_WHITE);
-    tokens9.append(Parser::Token_QUOTE);
-    tokens9.append(Parser::Token_TEXT);
-    tokens9.append(Parser::Token_QUOTE);
-    tokens9.append(Parser::Token_GT);
-    tests.insert("<!ATTLIST user role CDATA 'guest'>",  tokens9);
-
-    QList<Parser::TokenType> tokens10;
-    tokens10.append(Parser::Token_ELEMENT);
-    tokens10.append(Parser::Token_WHITE);
-    tokens10.append(Parser::Token_TEXT);
-    tokens10.append(Parser::Token_WHITE);
-    tokens10.append(Parser::Token_OPAREN);
-    tokens10.append(Parser::Token_OPAREN);
-    tokens10.append(Parser::Token_TEXT);
-    tokens10.append(Parser::Token_VBAR);
-    tokens10.append(Parser::Token_TEXT);
-    tokens10.append(Parser::Token_CPAREN);
-    tokens10.append(Parser::Token_ASTERISK);
-    tokens10.append(Parser::Token_COMMA);
-    tokens10.append(Parser::Token_OPAREN);
-    tokens10.append(Parser::Token_TEXT);
-    tokens10.append(Parser::Token_COMMA);
-    tokens10.append(Parser::Token_TEXT);
-    tokens10.append(Parser::Token_ASTERISK);
-    tokens10.append(Parser::Token_CPAREN);
-    tokens10.append(Parser::Token_CPAREN);
-    tokens10.append(Parser::Token_GT);
-    tests.insert("<!ELEMENT name1 ((name2|name3)*,(name4,name5*))>",  tokens10);
-    
-    
-    QList<Parser::TokenType> tokens11;
-    tokens11.append(Parser::Token_ATTLIST);
-    tokens11.append(Parser::Token_WHITE);
-    tokens11.append(Parser::Token_TEXT);
-    tokens11.append(Parser::Token_WHITE);
-    tokens11.append(Parser::Token_PERCENT);
-    tokens11.append(Parser::Token_TEXT);
-    tokens11.append(Parser::Token_SEMICOLON);
-    tokens11.append(Parser::Token_GT);
-    tests.insert("<!ATTLIST TITLE %i18n;>",  tokens11);
-    
-
-    foreach(QString key, tests.keys()) {
-        DTDTokenizer tokenizer(NULL, key);
-        int token;
-        int count = 0;
-        while((token = tokenizer.nextTokenKind()) != Parser::Token_EOF) {
-            kDebug() << key.mid(tokenizer.tokenBegin(), tokenizer.tokenEnd() - tokenizer.tokenBegin() + 1);
-            if(count >= tests[key].size())
-                QFAIL(QString("In [%1] More tokens than expected").arg(key).toAscii().constData());
-            if(token != tests[key].at(count)) {
-                QStringRef tokeStr(&key, tokenizer.tokenBegin(), tokenizer.tokenEnd() - tokenizer.tokenBegin() + 1);
-                QString fail("In [%1] EXPECTED '%2' GOT '%3' TOKEN '%4' AT '%5:%6'");
-                fail = fail.arg(key).arg((int)tests[key].at(count)).arg((int)token);
-                fail = fail.arg(tokeStr.toString()).arg(tokenizer.tokenBegin()).arg(tokenizer.tokenEnd());
-                QFAIL(fail.toAscii().constData());
-            }
-            count++;
-        }
-        if(count != tests[key].size())
-            QFAIL(QString("In [%1] Not all tokens read").arg(key).toAscii().constData());
+    DTDTokenizer tokenizer(NULL, code);
+    int token;
+    int encounteredTokens = 0;
+    while((token = tokenizer.nextTokenKind()) != Parser::Token_EOF) {
+        QCOMPARE(tokenText(token), tokenText(tokens[encounteredTokens]));
+        encounteredTokens++;
     }
+    QCOMPARE(encounteredTokens, tokens.size());
 }
 
 void TestSgmlTokenizer::testDTDEntity()
@@ -350,109 +375,122 @@ void TestSgmlTokenizer::testDTDEntity()
         QFAIL(QString("In [%1] Incorrect number of tokens").arg(text).toAscii().constData());
 }
 
+void TestSgmlTokenizer::testSgmlTokenizer_data()
+{
+    QTest::addColumn<QString>("code");
+    QTest::addColumn<TokenList>("tokens");
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_LT);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_COLON);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_EQUAL);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_CLOSE);
+    QTest::newRow("nstag-attrib-empty") << "<ns:name parm=''/>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_COMMENT);
+    QTest::newRow("comment") << "<!--  -->" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_CDATA);
+    QTest::newRow("cdata") << "<![CDATA[ sdsd ]]>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_PHP);
+    QTest::newRow("php") << "<?php ?>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_PROC);
+    tokens.append(Parser::Token_CDATA);
+    QTest::newRow("proc-cdata") << "<?xml?> <![CDATA[]]>" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_DOCTYPE);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("doctype") << "<!DOCTYPE root >" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_DOCTYPE);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_PUBLIC);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_QUOTE);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("doctype-public") << "<!doctype root PUBLIC \"uri\" \"uri\">" << tokens;
+    }
+
+    {
+    QList<Parser::TokenType> tokens;
+    tokens.append(Parser::Token_LT);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_EQUAL);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_COLON);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_EQUAL);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_WHITE);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_COLON);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_EQUAL);
+    tokens.append(Parser::Token_TEXT);
+    tokens.append(Parser::Token_GT);
+    QTest::newRow("kcfg-attribs") << "<kcfg xmlns=\"http://www.kde.org/standards/kcfg/1.0\" "
+                                     "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                                     "xsi:schemaLocation=\"http://www.kde.org/standards/kcfg/1.0 "
+                                     "http://www.kde.org/standards/kcfg/1.0/kcfg.xsd\">"
+                                  << tokens;
+    }
+}
+
 void TestSgmlTokenizer::testSgmlTokenizer()
 {
-    QHash<QString, QList<Parser::TokenType> > tests;
+    QFETCH(QString, code);
+    QFETCH(TokenList, tokens);
 
-    QList<Parser::TokenType> tokens1;
-    tokens1.append(Parser::Token_LT);
-    tokens1.append(Parser::Token_TEXT);
-    tokens1.append(Parser::Token_COLON);
-    tokens1.append(Parser::Token_TEXT);
-    tokens1.append(Parser::Token_WHITE);
-    tokens1.append(Parser::Token_TEXT);
-    tokens1.append(Parser::Token_EQUAL);
-    tokens1.append(Parser::Token_TEXT);
-    tokens1.append(Parser::Token_CLOSE);
-    tests.insert("<ns:name parm=''/>", tokens1);
-
-    QList<Parser::TokenType> tokens2;
-    tokens2.append(Parser::Token_COMMENT);
-    tests.insert("<!--  -->", tokens2);
-
-    QList<Parser::TokenType> tokens3;
-    tokens3.append(Parser::Token_CDATA);
-    tests.insert("<![CDATA[ sdsd ]]>", tokens3);
-
-    QList<Parser::TokenType> tokens4;
-    tokens4.append(Parser::Token_PHP);
-    tests.insert("<?php ?>", tokens4);
-
-    QList<Parser::TokenType> tokens5;
-    tokens5.append(Parser::Token_PROC);
-    tokens5.append(Parser::Token_CDATA);
-    tests.insert("<?xml?> <![CDATA[]]>", tokens5);
-
-    QList<Parser::TokenType> tokens6;
-    tokens6.append(Parser::Token_DOCTYPE);
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_TEXT);
-    tokens6.append(Parser::Token_WHITE);
-    tokens6.append(Parser::Token_GT);
-    tests.insert("<!DOCTYPE root >", tokens6);
-
-    QList<Parser::TokenType> tokens7;
-    tokens7.append(Parser::Token_DOCTYPE);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_PUBLIC);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_QUOTE);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_QUOTE);
-    tokens7.append(Parser::Token_WHITE);
-    tokens7.append(Parser::Token_QUOTE);
-    tokens7.append(Parser::Token_TEXT);
-    tokens7.append(Parser::Token_QUOTE);
-    tokens7.append(Parser::Token_GT);
-    tests.insert("<!doctype root PUBLIC \"uri\" \"uri\">", tokens7);
-
-    QList<Parser::TokenType> tokens8;
-    tokens8.append(Parser::Token_LT);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_EQUAL);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_COLON);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_EQUAL);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_WHITE);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_COLON);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_EQUAL);
-    tokens8.append(Parser::Token_TEXT);
-    tokens8.append(Parser::Token_GT);
-    tests.insert("<kcfg xmlns=\"http://www.kde.org/standards/kcfg/1.0\" \
- xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \
- xsi:schemaLocation=\"http://www.kde.org/standards/kcfg/1.0 \
- http://www.kde.org/standards/kcfg/1.0/kcfg.xsd\">", tokens8);
-
-    foreach(QString key, tests.keys()) {
-        SgmlTokenizer tokenizer(NULL, key);
-        int token;
-        int count = 0;
-        while((token = tokenizer.nextTokenKind()) != Parser::Token_EOF) {
-            kDebug() << key.mid(tokenizer.tokenBegin(), tokenizer.tokenEnd() - tokenizer.tokenBegin() + 1);
-            if(token != tests[key].at(count)) {
-                QStringRef tokeStr(&key, tokenizer.tokenBegin(), tokenizer.tokenEnd() - tokenizer.tokenBegin() + 1);
-                QString fail("In [%1] EXPECTED '%2' GOT '%3' TOKEN '%4' AT '%5:%6'");
-                fail = fail.arg(key).arg((int)tests[key].at(count)).arg((int)token);
-                fail = fail.arg(tokeStr.toString()).arg(tokenizer.tokenBegin()).arg(tokenizer.tokenEnd());
-                QFAIL(fail.toAscii().constData());
-            }
-            count++;
-        }
-        if(count != tests[key].size())
-            QFAIL(QString("In [%1] Not all tokens read").arg(key).toAscii().constData());
+    SgmlTokenizer tokenizer(NULL, code);
+    int token;
+    int encounteredTokens = 0;
+    while((token = tokenizer.nextTokenKind()) != Parser::Token_EOF) {
+        QCOMPARE(tokenText(token), tokenText(tokens[encounteredTokens]));
+        encounteredTokens++;
     }
+    QEXPECT_FAIL("php", "No tokens are found for PHP test case", Continue);
+    QCOMPARE(encounteredTokens, tokens.size());
 
 }
 

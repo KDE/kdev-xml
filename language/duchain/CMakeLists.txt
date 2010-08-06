@@ -99,9 +99,16 @@ target_link_libraries(sgmlparsertest
     kdevsgmlduchain kdevxmlcatalog)
 
 ### next target
-set(sgmltokenizertest_SRCS parser/tests/sgmltokenizertest.cpp)
+set(sgmltokenizertest_SRCS parser/tests/sgmltokenizertest.cpp tests/duchaintestbase.cpp)
 kde4_add_unit_test(sgmltokenizertest ${sgmltokenizertest_SRCS})
-target_link_libraries(sgmltokenizertest ${QT_QTTEST_LIBRARY} ${QT_QTCORE_LIBRARIES} ${KDE4_KDECORE_LIBS} kdevsgmlduchain kdevxmlcatalog)
+target_link_libraries(sgmltokenizertest
+    ${QT_QTTEST_LIBRARY} ${QT_QTCORE_LIBRARIES} ${KDE4_KDECORE_LIBS}
+    ${KDEVPLATFORM_INTERFACES_LIBRARIES}
+    ${KDEVPLATFORM_LANGUAGE_LIBRARIES}
+    ${KDEVPLATFORM_SHELL_LIBRARIES}
+    ${KDEVPLATFORM_PROJECT_LIBRARIES}
+    ${KDEVPLATFORM_TESTS_LIBRARIES}
+    kdevsgmlduchain kdevxmlcatalog)
 
 get_property(inc_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
 get_property(ln_dirs DIRECTORY PROPERTY LINK_DIRECTORIES)
