@@ -86,9 +86,17 @@ kde4_add_executable(sgmlparser parser/tests/main.cpp ${parser_SRCS} ${parser_STA
 target_link_libraries(sgmlparser ${QT_QTCORE_LIBRARY} ${KDEVPLATFORM_LANGUAGE_LIBRARIES} ${KDEVPLATFORM_INTERFACES_LIBRARIES} kdevsgmlduchain kdevxmlcatalog)
 
 ### next target
-set(parsertest_SRCS parser/tests/parsertest.cpp)
+set(parsertest_SRCS parser/tests/parsertest.cpp tests/duchaintestbase.cpp)
 kde4_add_unit_test(sgmlparsertest ${parsertest_SRCS})
-target_link_libraries(sgmlparsertest ${QT_QTTEST_LIBRARY} ${QT_QTCORE_LIBRARIES} kdevsgmlduchain kdevxmlcatalog)
+target_link_libraries(sgmlparsertest
+    ${QT_QTTEST_LIBRARY} ${QT_QTCORE_LIBRARIES}
+    ${KDE4_KTEXTEDITOR_LIBS}
+    ${KDEVPLATFORM_INTERFACES_LIBRARIES}
+    ${KDEVPLATFORM_LANGUAGE_LIBRARIES}
+    ${KDEVPLATFORM_SHELL_LIBRARIES}
+    ${KDEVPLATFORM_PROJECT_LIBRARIES}
+    ${KDEVPLATFORM_TESTS_LIBRARIES}
+    kdevsgmlduchain kdevxmlcatalog)
 
 ### next target
 set(sgmltokenizertest_SRCS parser/tests/sgmltokenizertest.cpp)

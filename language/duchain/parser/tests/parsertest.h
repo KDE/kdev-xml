@@ -20,10 +20,12 @@
 
 #include <QObject>
 
+#include "../duchain/tests/duchaintestbase.h"
+
 namespace Xml
 {
 
-class TestParser : public QObject
+class TestParser : public DUChainTestBase
 {
     Q_OBJECT
 
