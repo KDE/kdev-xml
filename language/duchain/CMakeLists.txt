@@ -82,8 +82,8 @@ target_link_libraries(duchaintest
 )
 
 ### next target
-kde4_add_executable(sgmlparser parser/tests/main.cpp ${parser_SRCS} ${parser_STAT_SRCS} )
-target_link_libraries(sgmlparser ${QT_QTCORE_LIBRARY} ${KDEVPLATFORM_LANGUAGE_LIBRARIES} ${KDEVPLATFORM_INTERFACES_LIBRARIES} kdevsgmlduchain kdevxmlcatalog)
+kde4_add_executable(sgml-parser parser/tests/main.cpp ${parser_SRCS} ${parser_STAT_SRCS} )
+target_link_libraries(sgml-parser ${QT_QTCORE_LIBRARY} ${KDEVPLATFORM_LANGUAGE_LIBRARIES} ${KDEVPLATFORM_INTERFACES_LIBRARIES} ${KDEVPLATFORM_TESTS_LIBRARIES} kdevsgmlduchain kdevxmlcatalog)
 
 ### next target
 set(parsertest_SRCS parser/tests/parsertest.cpp tests/duchaintestbase.cpp)
