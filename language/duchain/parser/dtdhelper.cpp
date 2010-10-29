@@ -114,7 +114,7 @@ public:
             if (!dec) continue;
             if (dec->kind() == Declaration::Type && dec->internalContext()) {
                 QList<Declaration *> children;
-                children.append(dec->internalContext()->findDeclarations(QualifiedIdentifier(child.toLower()), SimpleCursor::invalid(), AbstractType::Ptr()));
+                children.append(dec->internalContext()->findDeclarations(QualifiedIdentifier(child.toLower()), CursorInRevision::invalid(), AbstractType::Ptr()));
                 if (children.size() > 0)
                     return true;
                 else
@@ -127,7 +127,7 @@ public:
 protected:
     QList<Declaration *> findDeclarations(QString elementName) const {
         QList<Declaration *> list;
-        list.append(topContext.data()->findDeclarations(QualifiedIdentifier(elementName.toLower()), SimpleCursor::invalid(), AbstractType::Ptr()));
+        list.append(topContext.data()->findDeclarations(QualifiedIdentifier(elementName.toLower()), CursorInRevision::invalid(), AbstractType::Ptr()));
         return list;
     }
     IndexedTopDUContext topContext;

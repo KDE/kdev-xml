@@ -81,7 +81,7 @@ namespace KDevelop
   }
   QString tokenText(qint64 begin, qint64 end) const;
   void setDebug(bool debug);
-  void setCurrentDocument(QString url);
+  void setCurrentDocument(KDevelop::IndexedString url);
   ///Tells the parser to use DTD or SGML
   ///If this is not set it will guess the mime using the document URL.
   void setMime(KMimeType::Ptr mime);
@@ -91,7 +91,7 @@ namespace KDevelop
 [:
     QString m_contents;
     bool m_debug;
-    QString m_currentDocument;
+    KDevelop::IndexedString m_currentDocument;
     QList<KDevelop::ProblemPointer> m_problems;
     DtdHelper m_dtdHelper;
     QString tagName(const ElementTagAst *ast) const;
@@ -273,15 +273,15 @@ namespace KDevelop
         | tclose=GT 
             [: 
                 //TODO still broken not working as should, m_stack is fine but the children is still added to the wrong element
-                /* bool thisIsNotYourChildThief = false;
+                bool thisIsNotYourChildThief = false;
                 while(!m_stack.empty() 
                     && m_dtdHelper.closeOptional(tagName(m_stack.top())) 
                     && !m_dtdHelper.hasChild(tagName(m_stack.top()), tagName(*yynode))
                     && (thisIsNotYourChildThief = true))
                     m_stack.pop();
-                */
+
                 m_stack.push(*yynode);
-            :] ([: /*if(thisIsNotYourChildThief) break;*/ :] #children=element [: if(!m_stack.empty() && m_stack.top() != *yynode) break; :])*
+            :] ([: if(!m_stack.empty() && m_stack.top() != *yynode) break; :] #children=element [: if(!m_stack.empty() && m_stack.top() != *yynode) break; :])*
         | 0 [: reportProblem(Error, "Unclosed element"); :]
     )
 ->  elementTag ;;
@@ -549,11 +549,11 @@ void Parser::tokenize(const QString& contents)
         mime = m_mime;
     else {
         
-        mime = KMimeType::findByUrl(m_currentDocument);
+        mime = KMimeType::findByUrl(m_currentDocument.str());
     }
     if((!mime.isNull() && mime->is("application/xml-dtd"))
-        || m_currentDocument.toLower().endsWith(".mod")
-        || m_currentDocument.toLower().endsWith(".ent"))
+        || m_currentDocument.str().toLower().endsWith(".mod")
+        || m_currentDocument.str().toLower().endsWith(".ent"))
         tokenizer = new DTDTokenizer(tokenStream, contents);
     else
         tokenizer = new SgmlTokenizer(tokenStream, contents);
@@ -690,7 +690,7 @@ void Parser::setDebug( bool debug )
     m_debug = debug;
 }
 
-void Parser::setCurrentDocument(QString url)
+void Parser::setCurrentDocument(KDevelop::IndexedString url)
 {
     m_currentDocument = url;
 }

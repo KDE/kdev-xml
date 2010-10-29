@@ -37,7 +37,7 @@ class KDEVSGMLDUCHAIN_EXPORT ImportDeclaration : public KDevelop::Declaration
 {
 
 public:
-    ImportDeclaration( const KDevelop::SimpleRange& range, KDevelop::DUContext* parentContext );
+    ImportDeclaration( const KDevelop::RangeInRevision& range, KDevelop::DUContext* parentContext );
     ImportDeclaration(const ImportDeclaration& rhs);
     ImportDeclaration( KDevelop::DeclarationData & dd );
     virtual ~ImportDeclaration();

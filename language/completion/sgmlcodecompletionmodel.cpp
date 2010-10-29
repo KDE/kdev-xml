@@ -91,7 +91,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
     rng.start().setLine(0);
     rng.start().setColumn(0);
     session.setContents(view->document()->text(rng));
-    session.setCurrentDocument(view->document()->url().pathOrUrl());
+    session.setCurrentDocument(KDevelop::IndexedString(view->document()->url().pathOrUrl()));
     session.setMime(KMimeType::mimeType(view->document()->mimeType()));
     StartAst *start=0;
     if (!session.parse(&start)) {
@@ -202,7 +202,7 @@ void SgmlCodeCompletionModel::completionInvoked(KTextEditor::View* view, const K
             // add closing tag item, if it's not already closed
             DUChainReadLocker lock;
             TopDUContext* ctx = DUChain::self()->chainForDocument(url);
-            DUContext* _ctx = ctx->findContextAt(SimpleCursor(range.start().line(), range.start().column()));
+            DUContext* _ctx = ctx->findContextAt(CursorInRevision(range.start().line(), range.start().column()));
             bool alreadyClosed = false;
             if (_ctx && _ctx->localScopeIdentifier().toString() == visitor.contextName() ) {
                 /// HACK: see problem below, remove while once fixed

@@ -124,13 +124,13 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findAttributes(
 
     //NO? try the chain then
     if (elementName.isEmpty()) {
-        ctx = tc->findContextAt(SimpleCursor(range.start()));
+        ctx = tc->findContextAt(CursorInRevision(range.start().line(), range.start().column()));
         if (!ctx) {
             debug() << "No context";
             return items.values();
         }
 
-        dec = ctx->findDeclarationAt(SimpleCursor(range.start()));
+        dec = ctx->findDeclarationAt(CursorInRevision(range.start().line(), range.start().column()));
         if (!dec) {
             debug() << "No declaration";
             return items.values();
@@ -141,7 +141,7 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findAttributes(
 
     //DTD's
 
-    decs.append(tc->findDeclarations(Identifier(elementName.toLower()), SimpleCursor::invalid(), tc));
+    decs.append(tc->findDeclarations(Identifier(elementName.toLower()), CursorInRevision::invalid(), tc));
 
     foreach(Declaration * d, decs) {
         if (!d || d->kind() != Declaration::Type || !d->internalContext())
@@ -164,7 +164,7 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findAttributes(
  */
 void getChildrenInternal(QHash<QString, CompletionItem::Ptr>& items, DUContext* ctx, const Identifier& element)
 {
-    QList<Declaration *> decs = ctx->findDeclarations(element, SimpleCursor::invalid());
+    QList<Declaration *> decs = ctx->findDeclarations(element, CursorInRevision::invalid());
 
     foreach(Declaration * dc, decs) {
         if (!dc || dc->kind() != Declaration::Type || !dc->internalContext())
@@ -180,7 +180,7 @@ void getChildrenInternal(QHash<QString, CompletionItem::Ptr>& items, DUContext* 
             bool empty = false;
             Identifier id = elementDec->identifier();
             //Find its type, this would normaly be done through a use builder
-            QList<Declaration *> decList = ctx->findDeclarations(id, SimpleCursor::invalid());
+            QList<Declaration *> decList = ctx->findDeclarations(id, CursorInRevision::invalid());
             foreach(Declaration * dc, decList) {
                 if (!dc || dc->kind() != Declaration::Type || !dc->internalContext() || dc->identifier() != id)
                 continue;
@@ -217,7 +217,7 @@ QList< CompletionItem::Ptr > DtdCompletionSupport::findChildElements(
 
     //NO? try the chain then
     if (elementName.isEmpty()) {
-        ctx = tc->findContextAt(SimpleCursor(range.start()));
+        ctx = tc->findContextAt(CursorInRevision(range.start().line(), range.start().column()));
         if (!ctx) return items.values();
 
         dec = ctx->owner();

@@ -362,8 +362,8 @@ void SchemaBuilder::reportProblem(KDevelop::ProblemData::Severity , AstNode* ast
     p->setSource(KDevelop::ProblemData::Parser);
     p->setSeverity(KDevelop::ProblemData::Error);
     p->setDescription(message);
-    KDevelop::SimpleRange range = editor()->findRange(ast);
-    p->setFinalLocation(KDevelop::DocumentRange(m_document.str(), KTextEditor::Range(range.start.line, range.start.column, range.end.line, range.end.column)));
+    KDevelop::RangeInRevision range = editor()->findRange(ast);
+    p->setFinalLocation(KDevelop::DocumentRange(m_document, KTextEditor::Range(range.start.line, range.start.column, range.end.line, range.end.column)));
     m_problems << KDevelop::ProblemPointer(p);
 }
 

@@ -45,7 +45,7 @@ public:
 
     virtual ~ContextBuilder();
 
-    virtual KDevelop::ReferencedTopDUContext build(const KDevelop::IndexedString& url, AstNode* node, KDevelop::ReferencedTopDUContext updateContext = KDevelop::ReferencedTopDUContext(), bool useSmart = true);
+    virtual KDevelop::ReferencedTopDUContext build(const KDevelop::IndexedString& url, AstNode* node, KDevelop::ReferencedTopDUContext updateContext = KDevelop::ReferencedTopDUContext());
 
 protected:
     EditorIntegrator* editor() const;
@@ -59,13 +59,13 @@ protected:
     virtual void visitDtdElement(DtdElementAst* node);
     virtual void visitDtdEntityInclude(DtdEntityIncludeAst* node);
     virtual KDevelop::DUContext* contextFromNode(AstNode* node);
-    virtual KTextEditor::Range editorFindRange(AstNode* fromNode, AstNode* toNode);
+    virtual KDevelop::RangeInRevision editorFindRange(AstNode* fromNode, AstNode* toNode);
     virtual KDevelop::QualifiedIdentifier identifierForNode(IdentifierAst* node);
     virtual void setContextOnNode(AstNode* node, KDevelop::DUContext* context);
-    virtual KDevelop::TopDUContext* newTopContext(const KDevelop::SimpleRange& range, KDevelop::ParsingEnvironmentFile* file = 0);
-    virtual KDevelop::SimpleCursor findElementChildrenReach(ElementTagAst* node);
+    virtual KDevelop::TopDUContext* newTopContext(const KDevelop::RangeInRevision& range, KDevelop::ParsingEnvironmentFile* file = 0);
+    virtual KDevelop::CursorInRevision findElementChildrenReach(ElementTagAst* node);
 
-    KDevelop::SimpleRange nodeRange(AstNode *node) const;
+    KDevelop::RangeInRevision nodeRange(AstNode *node) const;
     QString nodeText(AstNode *node) const;
     QString tokenText(qint64 begin, qint64 end) const;
     
@@ -107,6 +107,7 @@ protected:
     virtual void reportProblem(KDevelop::ProblemData::Severity, AstNode* ast, const QString& message);
 
     bool m_mapAst;
+    EditorIntegrator* m_editor;
 };
 }
 

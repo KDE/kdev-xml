@@ -69,9 +69,9 @@ class KDEVSGMLDUCHAIN_EXPORT ElementDeclaration : public ClassDeclaration
 public:
 
     ElementDeclaration(const ElementDeclaration &rhs);
-    ElementDeclaration(const SimpleRange &range, DUContext *context);
+    ElementDeclaration(const RangeInRevision& range, DUContext* context);
     ElementDeclaration(ElementDeclarationData &data);
-    ElementDeclaration(ElementDeclarationData &data, const SimpleRange &range, DUContext *context);
+    ElementDeclaration(ElementDeclarationData &data, const RangeInRevision& range, DUContext* context);
     ~ElementDeclaration();
 
     virtual QString toString() const;

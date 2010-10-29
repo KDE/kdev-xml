@@ -230,7 +230,7 @@ int SgmlTokenizer::nextTokenKind() {
                 QString str(m_states.top().begin, m_contentData + m_curpos - m_states.top().begin + 1);
                 QString name, publicId, systemId;
                 doctype(str, name, publicId, systemId);
-                DtdHelper helper = DtdHelper::instance(publicId, systemId, QString(), name, KMimeType::Ptr(), currentDocument());
+                DtdHelper helper = DtdHelper::instance(publicId, systemId, QString(), name, KMimeType::Ptr(), currentDocument().str());
                 if (helper.isNull()) {
                     kDebug() << "Failed to get a DTD instance for DOCTYPE:" << name
                     << "PublicId:" << publicId

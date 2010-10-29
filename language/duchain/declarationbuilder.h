@@ -72,7 +72,7 @@ protected:
      *  @note The chain must be unlocked
      */
     ElementDeclaration* createClassInstanceDeclaration(const QString &identifier,
-            const KDevelop::SimpleRange &range,
+            const KDevelop::RangeInRevision &range,
             ElementDeclarationData::ElementType type,
             const QString &nsPrefix = QString());
 
@@ -80,14 +80,14 @@ protected:
      *  @note The chain must be unlocked
      */
     KDevelop::Declaration * createAliasDeclaration(const QString &identifier,
-            const KDevelop::SimpleRange &range,
+            const KDevelop::RangeInRevision &range,
             KDevelop::Declaration *alias);
 
     /** Creates an import declaration
      *  @note The chain must be unlocked
      */
     KDevelop::Declaration *createImportDeclaration(const QString &identifier,
-            const KDevelop::SimpleRange &range,
+            const KDevelop::RangeInRevision &range,
             const KUrl &url);
     QHash<QString, QString> m_dtdElementExclude;
 

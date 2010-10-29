@@ -20,6 +20,7 @@
 
 #include <interfaces/iplugin.h>
 #include <language/interfaces/ilanguagesupport.h>
+#include <language/editor/cursorinrevision.h>
 
 namespace KDevelop
 {
@@ -43,9 +44,9 @@ public:
 
     static LanguageSupport* self();
 
-    virtual KDevelop::SimpleRange specialLanguageObjectRange(const KUrl& url, const KDevelop::SimpleCursor& position);
+    virtual KDevelop::SimpleRange specialLanguageObjectRange(const KUrl& url, const KDevelop::CursorInRevision & position);
 
-    virtual QWidget* specialLanguageObjectNavigationWidget(const KUrl& url, const KDevelop::SimpleCursor& position);
+    virtual QWidget* specialLanguageObjectNavigationWidget(const KUrl& url, const KDevelop::CursorInRevision& position);
     
     
 private:

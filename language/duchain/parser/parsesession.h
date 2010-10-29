@@ -52,8 +52,8 @@ public:
     ~ParseSession();
 
     void setContents(const QString& contents);
-    void setCurrentDocument(const QString& filename);
-    bool readFile(const QString& filename, const char* charset = 0);
+    void setCurrentDocument(const KDevelop::IndexedString& filename);
+    bool readFile(const KDevelop::IndexedString& filename, const char* charset = 0);
     void setDebug(bool);
     TokenStream* tokenStream() const;
     QString contents() const;
@@ -71,7 +71,7 @@ public:
      *
      * \note the line starts from 0.
      */
-    KDevelop::SimpleCursor positionAt(qint64 offset) const;
+    KDevelop::CursorInRevision positionAt(qint64 offset) const;
 
     QList<KDevelop::ProblemPointer> problems();
 
@@ -89,7 +89,7 @@ public:
 private:
     QString m_contents;
     bool m_debug;
-    QString m_currentDocument;
+    KDevelop::IndexedString m_currentDocument;
     KDevPG::MemoryPool* m_pool;
     TokenStream* m_tokenStream;
     QList<KDevelop::ProblemPointer> m_problems;

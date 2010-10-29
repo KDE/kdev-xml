@@ -51,15 +51,13 @@ ElementDeclarationData::~ElementDeclarationData()
 
 ElementDeclaration::ElementDeclaration(const ElementDeclaration& rhs): ClassDeclaration(rhs)
 {
-    setSmartRange(rhs.smartRange(), DocumentRangeObject::DontOwn);
+    d_func_dynamic()->setClassId(this);
 }
 
-ElementDeclaration::ElementDeclaration(const SimpleRange& range, DUContext* context):
+ElementDeclaration::ElementDeclaration(const RangeInRevision& range, DUContext* context):
         ClassDeclaration(*new ElementDeclarationData, range, context)
 {
     d_func_dynamic()->setClassId(this);
-    if (context)
-        setContext(context);
 }
 
 ElementDeclaration::ElementDeclaration(ElementDeclarationData& data): ClassDeclaration(data)
@@ -67,7 +65,7 @@ ElementDeclaration::ElementDeclaration(ElementDeclarationData& data): ClassDecla
     d_func_dynamic()->setClassId(this);
 }
 
-ElementDeclaration::ElementDeclaration(ElementDeclarationData& data, const SimpleRange& range, DUContext* context): ClassDeclaration(data, range, context)
+ElementDeclaration::ElementDeclaration(ElementDeclarationData& data, const RangeInRevision& range, DUContext* context): ClassDeclaration(data, range, context)
 {
     d_func_dynamic()->setClassId(this);
 }

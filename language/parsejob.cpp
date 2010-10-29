@@ -67,51 +67,54 @@ void ParseJob::run()
 
     KUrl documentUrl = document().toUrl();
     KMimeType::Ptr documentMime = KMimeType::findByUrl(documentUrl);
-
-    //Dont update if not needed
-    if ( !(minimumFeatures() & KDevelop::TopDUContext::ForceUpdate) ) {
-        KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
+    
+    if ( !(minimumFeatures() & TopDUContext::ForceUpdate || minimumFeatures() & Resheduled) ) {
         bool needsUpdate = true;
-        foreach(const KDevelop::ParsingEnvironmentFilePointer &file, KDevelop::DUChain::self()->allEnvironmentFiles(document())) {
-            if (file->needsUpdate()) {
-                needsUpdate = true;
-                break;
-            } else {
+        DUChainReadLocker lock(DUChain::lock());
+        static const IndexedString langString("Xml");
+        foreach(const ParsingEnvironmentFilePointer &file, DUChain::self()->allEnvironmentFiles(document())) {
+            if (file->language() != langString) {
+                continue;
+            }
+            if (!file->needsUpdate()) {
+                kDebug() << "Already up to date" << document().str();
+                setDuChain(file->topContext());
                 needsUpdate = false;
+                break;
             }
         }
-
-        //Update it we dont have the schema
+        
+        //Update if we do not have the scema
         if(documentMime->is("application/xsd")) {
             SchemaMutexLocker lock;
             if(!SchemaController::self()->schemaForDocument(document()))
                 needsUpdate = true;
         }
-
+        
         if (!needsUpdate) {
             debug() << "Already up to date" << document().str();
-            cleanupSmartRevision();
             return;
         }
     }
 
     debug() << "Parsing:" << document().str();
 
+    KDevelop::ProblemPointer p = readContents();
+    if (p) {
+        //TODO: associate problem with topducontext
+        return abortJob();;
+    }
+    
     //Dont include yourself
     m_includes.insert(document().str(), QString::null);
 
     //Tokenize and parse
     ParseSession session;
     session.setMime(documentMime);
-    if (!document().str().isEmpty()) {
-        session.setCurrentDocument(document().str());
-    }
-    bool readFromDisk = !contentsAvailableFromEditor();
-    if (readFromDisk) {
-        session.readFile(document().str());
-    } else {
-        session.setContents(contentsFromEditor());
-    }
+    //TODO: support different charsets
+    session.setContents(QString::fromUtf8(contents().contents));
+    session.setCurrentDocument(document());
+
 
     StartAst *start=0;
     if (!session.parse(&start)) {
@@ -142,6 +145,7 @@ void ParseJob::run()
 
     EditorIntegrator editor(&session);
     editor.setMime(documentMime);
+    editor.setCurrentUrl(document());
 
     //Build includes
     IncludeBuilder includeBuilder(&editor);
@@ -180,15 +184,9 @@ void ParseJob::run()
         KDevelop::ParsingEnvironmentFilePointer file = top->parsingEnvironmentFile();
         QFileInfo fileInfo(document().str());
         QDateTime lastModified = fileInfo.lastModified();
-        if (readFromDisk) {
-            file->setModificationRevision(KDevelop::ModificationRevision(lastModified));
-        } else {
-            file->setModificationRevision(KDevelop::ModificationRevision(lastModified, revisionToken()));
-        }
+        file->setModificationRevision(KDevelop::ModificationRevision(lastModified));
         KDevelop::DUChain::self()->updateContextEnvironment( top->topContext(), file.data() );
     }
-
-    cleanupSmartRevision();
 
     /*
     {

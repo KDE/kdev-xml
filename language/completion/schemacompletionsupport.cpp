@@ -135,7 +135,7 @@ QList< CompletionItem::Ptr > SchemaCompletionSupport::findChildElements(
 
     //NO? try the chain then
     if (elementName.isEmpty()) {
-        ctx = tc->findContextAt(SimpleCursor(range.start()));
+        ctx = tc->findContextAt(CursorInRevision(range.start().line(), range.start().column()));
         if (!ctx) return items.values();
 
         dec = ctx->owner();
@@ -226,13 +226,13 @@ QList< CompletionItem::Ptr > SchemaCompletionSupport::findAttributes(
 
     //NO? try the chain then
     if (elementName.isEmpty()) {
-        ctx = tc->findContextAt(SimpleCursor(range.start()));
+        ctx = tc->findContextAt(CursorInRevision(range.start().line(), range.start().column()));
         if (!ctx) {
             debug() << "No context";
             return items.values();
         }
 
-        dec = ctx->findDeclarationAt(SimpleCursor(range.start()));
+        dec = ctx->findDeclarationAt(CursorInRevision(range.start().line(), range.start().column()));
         if (!dec) {
             debug() << "No declaration";
             return items.values();

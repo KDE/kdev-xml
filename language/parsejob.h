@@ -36,6 +36,10 @@ class EditorIntegrator;
 
 class ParseJob : public KDevelop::ParseJob
 {
+    enum {
+        Resheduled = KDevelop::TopDUContext::LastFeature
+    };
+    
     Q_OBJECT
 
 public:

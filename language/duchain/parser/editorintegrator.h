@@ -16,15 +16,16 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef XML_EDITORINTEGRATOR_H
-#define XML_EDITORINTEGRATOR_H
+#ifndef PHPEDITORINTEGRATOR_H
+#define PHPEDITORINTEGRATOR_H
 
-#include <language/editor/editorintegrator.h>
-#include <language/editor/simplerange.h>
+#include <language/editor/rangeinrevision.h>
 
 #include "parserexport.h"
+
 #include "kdev-pg-token-stream.h"
 #include <KMimeType>
+#include <language/duchain/indexedstring.h>
 
 namespace Xml
 {
@@ -41,89 +42,103 @@ class AstNode;
  *
  * \todo introduce stacks for the state?
  */
-class KDEVSGMLPARSER_EXPORT EditorIntegrator : public KDevelop::EditorIntegrator
+class KDEVSGMLPARSER_EXPORT EditorIntegrator
 {
 public:
     EditorIntegrator(ParseSession* session);
 
     ParseSession* parseSession() const;
 
-    /**
-     * Finds the location and \a file where the given \a token was parsed from.  This function
-     * does not change any of the EditorIntegrator's state.
-     *
-     * \param token token to locate
-     * \param edge set to FrontEdge to return the start position of the token, BackEdge to return the end position.
-     *
-     * \returns the requested cursor relating to the start or end of the given token.
-     */
-    KDevelop::SimpleCursor findPosition(const KDevPG::TokenStream::Token& token, Edge edge = BackEdge) const;
+    enum Edge {
+        FrontEdge,
+        BackEdge
+    };
+
+    enum RangeEdge {
+        InnerEdge,
+        OuterEdge
+    };
 
     /**
      * Finds the location and \a file where the given \a token was parsed from.
-     * This function does not change any of the EditorIntegrator's state.
      *
      * \param token token to locate
      * \param edge set to FrontEdge to return the start position of the token, BackEdge to return the end position.
      *
      * \returns the requested cursor relating to the start or end of the given token.
      */
-    KDevelop::SimpleCursor findPosition(qint64 token, Edge edge = BackEdge) const;
+    KDevelop::CursorInRevision findPosition(const KDevPG::TokenStream::Token& token, Edge edge = BackEdge) const;
 
-    using KDevelop::EditorIntegrator::createRange;
+    /**
+     * Finds the location and \a file where the given \a token was parsed from.
+     *
+     * \param token token to locate
+     * \param edge set to FrontEdge to return the start position of the token, BackEdge to return the end position.
+     *
+     * \returns the requested cursor relating to the start or end of the given token.
+     */
+    KDevelop::CursorInRevision findPosition(qint64 token, Edge edge = BackEdge) const;
 
     /**
      * Create a range encompassing the given AstNode \a node.
-     * This function does not change any of the EditorIntegrator's state.
      *
      * \overload
      */
-    KDevelop::SimpleRange findRange(AstNode* node, RangeEdge = OuterEdge);
+    KDevelop::RangeInRevision findRange(AstNode* node, RangeEdge = OuterEdge) const;
 
     /**
      * Create a range encompassing the given AstNode \a nodes.
-     * This function does not change any of the EditorIntegrator's state.
      *
      * \overload
      */
-    KDevelop::SimpleRange findRange(AstNode* from, AstNode* to);
+    KDevelop::RangeInRevision findRange(AstNode* from, AstNode* to) const;
 
     /**
      * Create a range encompassing the given AstNode \a token.
-     * This function does not change any of the EditorIntegrator's state.
      *
      * \overload
      */
-    KDevelop::SimpleRange findRange(const KDevPG::TokenStream::Token& token);
+    KDevelop::RangeInRevision findRange(const KDevPG::TokenStream::Token& token) const;
 
     /**
      * Create a range encompassing the given AstNode \a token.
-     * This function does not change any of the EditorIntegrator's state.
      *
      * \overload
      */
-    KDevelop::SimpleRange findRange(qint64 token);
+    KDevelop::RangeInRevision findRange(qint64 token) const;
 
     /**
      * Create a range encompassing the given AstNode \a tokens.
-     * This function does not change any of the EditorIntegrator's state.
      *
      * \overload
      */
-    KDevelop::SimpleRange findRange(qint64 start_token, qint64 end_token);
+    KDevelop::RangeInRevision findRange(qint64 start_token, qint64 end_token) const;
 
     /**
      * Retrieve the string represented by a token.
      */
     QString tokenToString(qint64 token) const;
     
-    void setMime(KMimeType::Ptr mime);
+    void setMime(const KMimeType::Ptr mime) {
+        m_mime = mime;
+    }
     
-    KMimeType::Ptr mime() const;
+    KMimeType::Ptr mime() {
+        return m_mime;
+    }
+    
+    KDevelop::IndexedString currentUrl() const {
+        return m_currentUrl;
+    }
+    
+    void setCurrentUrl(const KDevelop::IndexedString &url) {
+        m_currentUrl = url;
+    }
 
 private:
     ParseSession* m_session;
     KMimeType::Ptr m_mime;
+    KDevelop::IndexedString m_currentUrl;
 };
 
 }

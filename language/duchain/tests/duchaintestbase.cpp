@@ -86,7 +86,7 @@ KDevelop::TopDUContext* DUChainTestBase::parse(const QByteArray& unit, DumpAreas
         kDebug() << "===== DUChain:";
 
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
-        dumper.dump(top);
+        //dumper.dump(top);
     }
 
     if (dump)

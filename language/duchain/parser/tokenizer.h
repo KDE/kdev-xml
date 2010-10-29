@@ -27,12 +27,15 @@
 #include <QtCore/QTextStream>
 
 #include <kdev-pg-token-stream.h>
+#include <language/duchain/indexedstring.h>
+
 
 class QString;
 
 namespace KDevPG {
 class TokenStream;
 }
+
 
 namespace Xml {
 
@@ -96,14 +99,14 @@ public:
     /** Sets the url of the current document.
      *  @see m_document
      */
-    void setCurrentDocument(const QString &url) {
+    void setCurrentDocument(const KDevelop::IndexedString &url) {
         m_document = url;
     }
 
     /** Returns the url of the current document.
      *  @see m_document
      */
-    QString currentDocument() const {
+    KDevelop::IndexedString currentDocument() const {
         return m_document;
     }
 protected:
@@ -152,7 +155,7 @@ protected:
      *  We use XMLCatalog to resolve the DTD but if the url is relative,
      *  it must be made absolute.
      */
-    QString m_document;
+    KDevelop::IndexedString m_document;
 private:
     void init(TokenStream* tokenstream, const QChar* content, qint64 contentLength);
     int m_enlc;

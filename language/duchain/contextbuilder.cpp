@@ -49,23 +49,23 @@ ContextBuilder::~ContextBuilder()
 
 EditorIntegrator* ContextBuilder::editor() const
 {
-    return static_cast<EditorIntegrator *>(ContextBuilderBase::editor());
+    return m_editor;
 }
 
 void ContextBuilder::setEditor(EditorIntegrator* editor)
 {
-    ContextBuilderBase::setEditor(editor, false);
+    m_editor = editor;
 }
 
 
-KDevelop::ReferencedTopDUContext ContextBuilder::build(const KDevelop::IndexedString& url, AstNode* node, KDevelop::ReferencedTopDUContext updateContext, bool useSmart)
+KDevelop::ReferencedTopDUContext ContextBuilder::build(const KDevelop::IndexedString& url, AstNode* node, KDevelop::ReferencedTopDUContext updateContext)
 {
-    KDevelop::ReferencedTopDUContext top = KDevelop::AbstractContextBuilder< Xml::AstNode, Xml::IdentifierAst >::build(url, node, updateContext, useSmart);
+    KDevelop::ReferencedTopDUContext top = KDevelop::AbstractContextBuilder< Xml::AstNode, Xml::IdentifierAst >::build(url, node, updateContext);
     return top;
 }
 
 
-KDevelop::TopDUContext* ContextBuilder::newTopContext(const KDevelop::SimpleRange& range, KDevelop::ParsingEnvironmentFile* file)
+KDevelop::TopDUContext* ContextBuilder::newTopContext(const KDevelop::RangeInRevision& range, KDevelop::ParsingEnvironmentFile* file)
 {
     if (!file) {
         file = new KDevelop::ParsingEnvironmentFile(editor()->currentUrl());
@@ -81,9 +81,9 @@ KDevelop::DUContext* ContextBuilder::contextFromNode(AstNode* node)
     return 0;
 }
 
-KTextEditor::Range ContextBuilder::editorFindRange(AstNode* fromNode, AstNode* toNode)
+KDevelop::RangeInRevision ContextBuilder::editorFindRange(AstNode* fromNode, AstNode* toNode)
 {
-    return static_cast<EditorIntegrator *>(editor())->findRange(fromNode, toNode).textRange();
+    return editor()->findRange(fromNode, toNode);
 }
 
 KDevelop::QualifiedIdentifier ContextBuilder::identifierForNode(IdentifierAst* node)
@@ -148,7 +148,7 @@ void ContextBuilder::visitElementTag(ElementTagAst* node)
     }
 
     //kDebug() << "Creating context..";
-    KDevelop::SimpleRange range;
+    KDevelop::RangeInRevision range;
     EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
     range.start = e->findPosition(node->tclose, EditorIntegrator::BackEdge);
     range.end = findElementChildrenReach(node);
@@ -198,7 +198,7 @@ void ContextBuilder::visitDtdEntityInclude(DtdEntityIncludeAst* node)
         entity = nodeText(node->name);
     }
 
-    KDevelop::SimpleRange range = nodeRange(node);
+    KDevelop::RangeInRevision range = nodeRange(node);
     if (!entity.isEmpty() && m_entities.contains(entity)) {
         IncludeIdentifier incid = m_entities.value(entity);
         QString publicId = incid.publicId.str();
@@ -222,7 +222,7 @@ void ContextBuilder::visitDtdEntityInclude(DtdEntityIncludeAst* node)
 void ContextBuilder::visitDtdElement(DtdElementAst* node)
 {
     //NOTE this is called for each element in the construct <!ELEMENT (element1, element2...) ...>
-    KDevelop::SimpleRange range;
+    KDevelop::RangeInRevision range;
     EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
     if (node->name)
         range.start = e->findPosition(node->name->endToken , EditorIntegrator::BackEdge);
@@ -240,7 +240,7 @@ void ContextBuilder::visitDtdElement(DtdElementAst* node)
 }
 
 
-KDevelop::SimpleCursor ContextBuilder::findElementChildrenReach(ElementTagAst* node)
+KDevelop::CursorInRevision ContextBuilder::findElementChildrenReach(ElementTagAst* node)
 {
     if (node->childrenSequence) {
         ElementAst *ast = node->childrenSequence->back()->element;
@@ -250,7 +250,7 @@ KDevelop::SimpleCursor ContextBuilder::findElementChildrenReach(ElementTagAst* n
     return editor()->findPosition(node->endToken, EditorIntegrator::BackEdge);
 }
 
-KDevelop::SimpleRange ContextBuilder::nodeRange(AstNode* node) const
+KDevelop::RangeInRevision ContextBuilder::nodeRange(AstNode* node) const
 {
     return editor()->findRange(node);
 }
@@ -308,7 +308,7 @@ void ContextBuilder::reportProblem(KDevelop::ProblemData::Severity , AstNode* as
     p->setSource(KDevelop::ProblemData::Parser);
     p->setSeverity(KDevelop::ProblemData::Error);
     p->setDescription(message);
-    KDevelop::SimpleRange range = editor()->findRange(ast);
-    p->setFinalLocation(KDevelop::DocumentRange(editor()->currentUrl().str(), KTextEditor::Range(range.start.line, range.start.column, range.end.line, range.end.column)));
+    KDevelop::RangeInRevision range = editor()->findRange(ast);
+    p->setFinalLocation(KDevelop::DocumentRange(editor()->currentUrl(), KTextEditor::Range(range.start.line, range.start.column, range.end.line, range.end.column)));
     m_problems << KDevelop::ProblemPointer(p);
 }

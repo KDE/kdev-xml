@@ -19,6 +19,7 @@
 
 #include "completion/sgmlcodecompletionmodel.h"
 #include "parsejob.h"
+#include "language_debug.h"
 
 #include <KDE/KPluginFactory>
 #include <KDE/KPluginLoader>
@@ -68,14 +69,14 @@ LanguageSupport* LanguageSupport::self()
     return m_self;
 }
 
-QWidget* LanguageSupport::specialLanguageObjectNavigationWidget(const KUrl& url, const KDevelop::SimpleCursor& position)
+QWidget* LanguageSupport::specialLanguageObjectNavigationWidget(const KUrl& url, const KDevelop::CursorInRevision& position)
 {
     KDevelop::TopDUContextPointer top;
 
     KDevelop::DUChainReadLocker lock(KDevelop::DUChain::lock());
     top = KDevelop::DUChain::self()->chainForDocument(url);
     if (!top) {
-        kDebug() << "No top context";
+        debug() << "No top context";
         return 0;
     }
 
@@ -85,7 +86,7 @@ QWidget* LanguageSupport::specialLanguageObjectNavigationWidget(const KUrl& url,
     }
 
     if (!context) {
-        kDebug() << "No context";
+        debug() << "No context";
         return 0;
     }
 
@@ -95,7 +96,7 @@ QWidget* LanguageSupport::specialLanguageObjectNavigationWidget(const KUrl& url,
         if (context->parentContext())
             decl = context->parentContext()->findDeclarationAt(position);
         if (!decl) {
-            kDebug() << "No declaration for cursor";
+            debug() << "No declaration for cursor";
             return 0;
         }
     }
@@ -103,7 +104,7 @@ QWidget* LanguageSupport::specialLanguageObjectNavigationWidget(const KUrl& url,
     return new NavigationWidget(KDevelop::DeclarationPointer(decl), top);
 }
 
-KDevelop::SimpleRange LanguageSupport::specialLanguageObjectRange(const KUrl& url, const KDevelop::SimpleCursor& position)
+KDevelop::SimpleRange LanguageSupport::specialLanguageObjectRange(const KUrl& url, const KDevelop::CursorInRevision& position)
 {
     /*
         KDevelop::TopDUContextPointer top;
@@ -122,7 +123,7 @@ KDevelop::SimpleRange LanguageSupport::specialLanguageObjectRange(const KUrl& ur
             return decl->range();
         }
     */
-    return KDevelop::ILanguageSupport::specialLanguageObjectRange(url, position);
+    return KDevelop::ILanguageSupport::specialLanguageObjectRange(url, position.castToSimpleCursor());
 }
 
 KDevelop::ParseJob* LanguageSupport::createParseJob(const KUrl& url)

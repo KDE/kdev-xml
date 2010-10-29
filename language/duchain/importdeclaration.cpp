@@ -30,7 +30,7 @@ typedef KDevelop::DeclarationData ImportDeclarationData;
 
 REGISTER_DUCHAIN_ITEM(ImportDeclaration);
 
-ImportDeclaration::ImportDeclaration( const KDevelop::SimpleRange& range, KDevelop::DUContext* parentContext )
+ImportDeclaration::ImportDeclaration( const KDevelop::RangeInRevision& range, KDevelop::DUContext* parentContext )
     : Declaration( range, parentContext )
 {
     setKind(Import);

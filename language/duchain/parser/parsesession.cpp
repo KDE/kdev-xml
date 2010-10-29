@@ -62,18 +62,18 @@ void ParseSession::setContents(const QString& contents)
     m_contents = contents;
 }
 
-void ParseSession::setCurrentDocument(const QString& filename)
+void ParseSession::setCurrentDocument(const KDevelop::IndexedString& filename)
 {
     m_currentDocument = filename;
 }
 
-bool ParseSession::readFile(const QString& filename, const char* codec)
+bool ParseSession::readFile(const KDevelop::IndexedString& filename, const char* codec)
 {
     m_currentDocument = filename;
 
-    QFile f(filename);
+    QFile f(filename.str());
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        debug() << "Couldn't open project file:" << filename;
+        debug() << "Couldn't open project file:" << filename.str();
         return false;
     }
     QTextStream s(&f);
@@ -123,11 +123,11 @@ bool ParseSession::parse(StartAst** ast)
     return matched;
 }
 
-KDevelop::SimpleCursor ParseSession::positionAt(qint64 offset) const
+KDevelop::CursorInRevision ParseSession::positionAt(qint64 offset) const
 {
     qint64 line, column;
     m_tokenStream->locationTable()->positionAt(offset, &line, &column);
-    return KDevelop::SimpleCursor(line, column);
+    return KDevelop::CursorInRevision(line, column);
 }
 
 QString ParseSession::symbol(qint64 token) const

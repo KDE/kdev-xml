@@ -68,7 +68,7 @@ public slots:
 protected:
     KDevelop::TopDUContext* parse(const QByteArray& unit, DumpAreas dump = static_cast<DumpAreas>(DumpAST | DumpDUChain), QString fileName = QString());
 
-    KDevelop::DumpChain dumper;
+    //KDevelop::DumpChain dumper;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(DUChainTestBase::DumpAreas)

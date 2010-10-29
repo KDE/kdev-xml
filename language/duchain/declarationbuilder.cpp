@@ -49,7 +49,7 @@ void DeclarationBuilder::closeDeclaration()
 }
 
 ElementDeclaration* DeclarationBuilder::createClassInstanceDeclaration(const QString &identifier,
-        const KDevelop::SimpleRange &range,
+        const KDevelop::RangeInRevision &range,
         ElementDeclarationData::ElementType type,
         const QString &nsPrefix)
 {
@@ -70,7 +70,7 @@ ElementDeclaration* DeclarationBuilder::createClassInstanceDeclaration(const QSt
     return dec;
 }
 
-KDevelop::Declaration* DeclarationBuilder::createAliasDeclaration(const QString& identifier, const KDevelop::SimpleRange& range, KDevelop::Declaration* alias)
+KDevelop::Declaration* DeclarationBuilder::createAliasDeclaration(const QString& identifier, const KDevelop::RangeInRevision& range, KDevelop::Declaration* alias)
 {
     KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(identifier.toUtf8())));
     KDevelop::AliasDeclaration *dec = 0;
@@ -82,7 +82,7 @@ KDevelop::Declaration* DeclarationBuilder::createAliasDeclaration(const QString&
 }
 
 
-KDevelop::Declaration* DeclarationBuilder::createImportDeclaration(const QString& identifier, const KDevelop::SimpleRange& range, const KUrl& url)
+KDevelop::Declaration* DeclarationBuilder::createImportDeclaration(const QString& identifier, const KDevelop::RangeInRevision& range, const KUrl& url)
 {
 
     KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(identifier.toUtf8())));
@@ -96,17 +96,17 @@ KDevelop::Declaration* DeclarationBuilder::createImportDeclaration(const QString
     }
 
     //Create in topcontext
-    injectContext(editor()->smart(),currentContext()->topContext());
+    injectContext(currentContext()->topContext());
 
     ///NOTE: this is quite hacky
     ///actually a declaration in includedCtx should be created (or reused) with range (0,0,0,0)
     ///then a UseBuilder would build a use of that declaration
     KDevelop::Declaration* dec = openDefinition<ImportDeclaration>(id, range);
-    injectContext(editor()->smart(), includedCtx);
+    injectContext(includedCtx);
     eventuallyAssignInternalContext();
-    closeInjectedContext(editor()->smart());
+    closeInjectedContext();
     closeDeclaration();
-    closeInjectedContext(editor()->smart());
+    closeInjectedContext();
     return dec;
 }
 
@@ -114,7 +114,7 @@ void DeclarationBuilder::visitDtdDoctype(DtdDoctypeAst* node)
 {
     {
         EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
-        KDevelop::SimpleRange range;
+        KDevelop::RangeInRevision range;
         range.start = e->findPosition(node->startToken, EditorIntegrator::FrontEdge);
         if (!node->childrenSequence)
             range.end = e->findPosition(node->endToken, EditorIntegrator::BackEdge);
@@ -138,7 +138,7 @@ void DeclarationBuilder::visitDtdDoctype(DtdDoctypeAst* node)
  */
 void DeclarationBuilder::visitDtdElement(DtdElementAst* node)
 {
-    typedef QPair< QString, KDevelop::SimpleRange > NameRangePair;
+    typedef QPair< QString, KDevelop::RangeInRevision > NameRangePair;
     QList<NameRangePair> elements;
     if (node->name) {
         elements << NameRangePair(nodeText(node->name), nodeRange(node->name));
@@ -208,7 +208,7 @@ void DeclarationBuilder::visitDtdElement(DtdElementAst* node)
 // (element3 | (element4, element5))
 void DeclarationBuilder::visitDtdElementList(DtdElementListAst* node)
 {
-    KDevelop::SimpleRange range;
+    KDevelop::RangeInRevision range;
     QString name;
     if (node->name) {
         name = nodeText(node->name);
@@ -229,7 +229,7 @@ void DeclarationBuilder::visitDtdElementList(DtdElementListAst* node)
 // +(exclude6 | exclude7)
 void DeclarationBuilder::visitDtdElementIncludeItem(DtdElementIncludeItemAst* node)
 {
-    KDevelop::SimpleRange range;
+    KDevelop::RangeInRevision range;
     QString name;
     if (node->name) {
         name = nodeText(node->name);
@@ -309,7 +309,7 @@ void DeclarationBuilder::visitDtdEntity(DtdEntityAst* node)
         m_entities.insert(nodeText(node->name), id);
     } else if (node->name && !node->persent) {
         //Its text
-        KDevelop::SimpleRange range = nodeRange(node);
+        KDevelop::RangeInRevision range = nodeRange(node);
         QString identifier = nodeText(node->name);
         KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(identifier.toLower().toUtf8())));
         {
@@ -335,7 +335,7 @@ void DeclarationBuilder::visitDtdEntityInclude(DtdEntityIncludeAst* node)
     if (node->name) {
         entity = nodeText(node->name);
     }
-    KDevelop::SimpleRange range = nodeRange(node);
+    KDevelop::RangeInRevision range = nodeRange(node);
     if (!entity.isEmpty() && m_entities.contains(entity)) {
         IncludeIdentifier incid = m_entities.value(entity);
         KUrl url = CatalogHelper::resolve(incid.publicId.str(),
@@ -364,7 +364,7 @@ void DeclarationBuilder::visitElementTag(ElementTagAst* node)
         AttributeAst * attrib = attribute(node, "targetNamespace");
         //Namespaces
         if (attrib && attrib->name && attrib->value) {
-            KDevelop::SimpleRange range;
+            KDevelop::RangeInRevision range;
             EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
             range.start = e->findPosition(node->tclose, EditorIntegrator::BackEdge);
             range.end = findElementChildrenReach(node);
@@ -409,7 +409,7 @@ void DeclarationBuilder::visitElementCloseTag(ElementCloseTagAst* node)
             createAliasDeclaration(nodeText(node->ns), nodeRange(node->ns), dec);
     }
     
-    KDevelop::SimpleRange range = nodeRange(node);
+    KDevelop::RangeInRevision range = nodeRange(node);
     createClassInstanceDeclaration(nodeText(node->name), nodeRange(node->name), ElementDeclarationData::CloseTag, nodeText(node->ns));
     DeclarationBuilderBase::visitElementCloseTag(node);
     closeDeclaration();
@@ -431,7 +431,7 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
 
     //Includes
     if (node->value) {
-        KDevelop::SimpleRange range = nodeRange(node->value);
+        KDevelop::RangeInRevision range = nodeRange(node->value);
         IncludeIdentifier incid;
         if (node->ns && nodeText(node->ns) == "xmlns") {
             incid.uri = KDevelop::IndexedString(nodeText(node->value));
@@ -469,12 +469,12 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
 
     //Namespace aliases
     if (node->ns && node->name && node->value && nodeText(node->ns) == "xmlns") {
-        KDevelop::SimpleRange range = nodeRange(node->name);
+        KDevelop::RangeInRevision range = nodeRange(node->name);
         KDevelop::QualifiedIdentifier id(KDevelop::Identifier(KDevelop::IndexedString(nodeText(node->name))));
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
 
         //Create alias in topcontext
-        injectContext(editor()->smart(),currentContext()->topContext());
+        injectContext(currentContext()->topContext());
         KDevelop::NamespaceAliasDeclaration *dec = openDefinition<KDevelop::NamespaceAliasDeclaration>(id, range);
 
         //Find the namespace
@@ -484,16 +484,16 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
         //TODO else a propper unresolved id or just dont declare it
 
         closeDeclaration();
-        closeInjectedContext(editor()->smart());
+        closeInjectedContext();
     }
 
     //Namespace use
     if (node->name && node->value && nodeText(node->name) == "xmlns") {
-        KDevelop::SimpleRange range = nodeRange(node->value);
+        KDevelop::RangeInRevision range = nodeRange(node->value);
         KDevelop::DUChainWriteLocker lock(KDevelop::DUChain::lock());
 
         //Create namespace use in topcontext
-        injectContext(editor()->smart(),currentContext()->topContext());
+        injectContext(currentContext()->topContext());
         KDevelop::QualifiedIdentifier id(globalImportIdentifier());
         KDevelop::NamespaceAliasDeclaration *dec = openDefinition<KDevelop::NamespaceAliasDeclaration>(id, range);
 
@@ -503,7 +503,7 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
             dec->setImportIdentifier(nsDec->qualifiedIdentifier());
 
         closeDeclaration();
-        closeInjectedContext(editor()->smart());
+        closeInjectedContext();
     }
 
     //Create namespace alias
@@ -518,7 +518,7 @@ void DeclarationBuilder::visitAttribute(AttributeAst* node)
 
 void DeclarationBuilder::visitElementCDATA(ElementCDATAAst* node)
 {
-    KDevelop::SimpleRange range = nodeRange(node);
+    KDevelop::RangeInRevision range = nodeRange(node);
     createClassInstanceDeclaration("CDATA", range, ElementDeclarationData::CDATA);
     DeclarationBuilderBase::visitElementCDATA(node);
     closeDeclaration();
@@ -527,7 +527,7 @@ void DeclarationBuilder::visitElementCDATA(ElementCDATAAst* node)
 
 void DeclarationBuilder::visitElementPCDATA(ElementPCDATAAst* node)
 {
-    KDevelop::SimpleRange range = nodeRange(node);
+    KDevelop::RangeInRevision range = nodeRange(node);
     createClassInstanceDeclaration("PCDATA", range, ElementDeclarationData::PCDATA);
     DeclarationBuilderBase::visitElementPCDATA(node);
     closeDeclaration();
@@ -535,7 +535,7 @@ void DeclarationBuilder::visitElementPCDATA(ElementPCDATAAst* node)
 
 void DeclarationBuilder::visitElementText(ElementTextAst* node)
 {
-    KDevelop::SimpleRange range = nodeRange(node);
+    KDevelop::RangeInRevision range = nodeRange(node);
     createClassInstanceDeclaration("TEXT", range, ElementDeclarationData::Text);
     DeclarationBuilderBase::visitElementText(node);
     closeDeclaration();
