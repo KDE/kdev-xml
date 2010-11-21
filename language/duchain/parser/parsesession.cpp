@@ -67,13 +67,13 @@ void ParseSession::setCurrentDocument(const KDevelop::IndexedString& filename)
     m_currentDocument = filename;
 }
 
-bool ParseSession::readFile(const KDevelop::IndexedString& filename, const char* codec)
+bool ParseSession::readFile(const QString& filename, const char* codec)
 {
-    m_currentDocument = filename;
+    m_currentDocument = KDevelop::IndexedString(filename);
 
-    QFile f(filename.str());
+    QFile f(filename);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        debug() << "Couldn't open project file:" << filename.str();
+        debug() << "Couldn't open project file:" << filename;
         return false;
     }
     QTextStream s(&f);

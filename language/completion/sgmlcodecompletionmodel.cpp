@@ -636,7 +636,8 @@ void SgmlCodeCompletionModel::executeCompletionItem2(KTextEditor::Document* docu
     }
 }
 
-bool SgmlCodeCompletionModel::shouldAbortCompletion(KTextEditor::View* view, const KTextEditor::SmartRange& range, const QString& currentCompletion)
+bool SgmlCodeCompletionModel::shouldAbortCompletion(View* view, const KTextEditor::Range& range, const QString& currentCompletion
+)
 {
     Q_UNUSED(view);
     Q_UNUSED(range);

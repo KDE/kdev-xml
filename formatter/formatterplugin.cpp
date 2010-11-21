@@ -34,7 +34,6 @@
 #include <KDE/KMessageBox>
 #include <KDE/KActionCollection>
 #include <KDE/KAction>
-#include <KDE/KTextEditor/SmartCursor>
 #include <KDE/KTextEditor/View>
 
 #include <interfaces/icore.h>

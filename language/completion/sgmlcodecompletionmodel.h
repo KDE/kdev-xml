@@ -35,11 +35,11 @@ namespace Xml {
 
 class KDEVSGMLCOMPLETION_EXPORT SgmlCodeCompletionModel  :
     public KTextEditor::CodeCompletionModel2,
-    public KTextEditor::CodeCompletionModelControllerInterface,
+    public KTextEditor::CodeCompletionModelControllerInterface3,
     public CompletionModelBase
 {
     Q_OBJECT
-    Q_INTERFACES(KTextEditor::CodeCompletionModelControllerInterface)
+    Q_INTERFACES(KTextEditor::CodeCompletionModelControllerInterface3)
 public:
     SgmlCodeCompletionModel(QObject *parent);
     virtual ~SgmlCodeCompletionModel();
@@ -52,7 +52,7 @@ public:
 
     virtual KTextEditor::Range completionRange(KTextEditor::View* view, const KTextEditor::Cursor &position);
 
-    virtual bool shouldAbortCompletion(KTextEditor::View* view, const KTextEditor::SmartRange& range, const QString &currentCompletion);
+    virtual bool shouldAbortCompletion(KTextEditor::View* view, const KTextEditor::Range& range, const QString &currentCompletion);
 
     virtual bool shouldStartCompletion(KTextEditor::View* view, const QString& insertedText, bool userInsertion, const KTextEditor::Cursor& position);
 

@@ -36,7 +36,6 @@
 #include <KDE/KAction>
 #include <KDE/KIO/CopyJob>
 #include <KDE/KTextEditor/Document>
-#include <KDE/KTextEditor/SmartCursor>
 #include <KDE/KTextEditor/View>
 #include <KDE/KParts/MainWindow>
 

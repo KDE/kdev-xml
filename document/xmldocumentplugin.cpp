@@ -27,7 +27,6 @@
 #include <KDE/KActionCollection>
 #include <KDE/KAction>
 #include <KDE/KTextEditor/Document>
-#include <KTextEditor/SmartCursor>
 
 #include <interfaces/icore.h>
 #include <interfaces/contextmenuextension.h>
