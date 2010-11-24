@@ -5,15 +5,15 @@ SET(CMAKE_COLOR_MAKEFILE ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${xml_SOURCE_DIR}/cmake)
 
-set(KDE_MIN_VERSION "4.2.0")
+set(KDE_MIN_VERSION "4.5.2")
 
 set(KDE4_BUILD_TESTS "ON" CACHE "BOOL" "Enable building of tests" FORCE )
 
 #find_package(Qt4 4.6.2 REQUIRED)
 
-find_package(KDE4 4.2.0 REQUIRED)
+find_package(KDE4 4.5.2 REQUIRED)
 
-find_package(KDevPlatform 0.9.95 REQUIRED)
+find_package(KDevPlatform 1.1.60 REQUIRED)
 
 include ( KDE4Defaults )
 
