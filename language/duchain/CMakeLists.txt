@@ -60,6 +60,7 @@ target_link_libraries(kdevsgmlduchain
     ${KDEVPLATFORM_SHELL_LIBRARIES}
     ${KDEVPLATFORM_PROJECT_LIBRARIES}
     ${KDEVPLATFORM_TESTS_LIBRARIES}
+    ${KDE4_THREADWEAVER_LIBRARIES}
     kdevxmlcatalog
 )
 

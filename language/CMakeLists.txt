@@ -31,6 +31,7 @@ target_link_libraries(kdevsgmllanguagesupport
     ${KDEVPLATFORM_INTERFACES_LIBRARIES}
     ${KDEVPLATFORM_LANGUAGE_LIBRARIES}
     ${KDE4_KTEXTEDITOR_LIBS}
+    ${KDE4_THREADWEAVER_LIBRARIES}
     kdevsgmlduchain
     kdevsgmlcompletion
     kdevxmlcatalog
