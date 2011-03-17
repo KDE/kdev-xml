@@ -55,6 +55,7 @@ kde4_add_library( kdevsgmlduchain SHARED ${duchain_SRCS} ${parser_SRCS} ${parser
 target_link_libraries(kdevsgmlduchain
     ${KDE4_KDECORE_LIBS}
     ${KDE4_KTEXTEDITOR_LIBS}
+    ${KDE4_THREADWEAVER_LIBRARIES}
     ${KDEVPLATFORM_INTERFACES_LIBRARIES}
     ${KDEVPLATFORM_LANGUAGE_LIBRARIES}
     ${KDEVPLATFORM_SHELL_LIBRARIES}

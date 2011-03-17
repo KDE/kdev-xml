@@ -296,6 +296,7 @@ DtdHelper DtdHelper::instance(const QString& publicId, const QString& systemId, 
         if (!itop.isValid()) {
             ILanguage *lang = ICore::self()->languageController()->language("Sgml");
             if (lang && lang->languageSupport()) {
+                ///FIXME: rewrite this
                 ParseJob * job = lang->languageSupport()->createParseJob(url);
                 ThreadWeaver::Weaver::instance()->enqueue(job);
                 //TODO Dodgy
