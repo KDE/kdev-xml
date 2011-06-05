@@ -23,6 +23,7 @@
 #include "parsesession.h"
 #include "sgmldebugvisitor.h"
 #include "sgmltokentext.h"
+#include "sgmltokenizer.h"
 
 #include <language/util/debuglanguageparserhelper.h>
 

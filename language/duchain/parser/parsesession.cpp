@@ -24,6 +24,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.           *
  *****************************************************************************/
 #include "parsesession.h"
+#include "sgmlast.h"
 #include "sgmltokenizer.h"
 #include "kdev-pg-memory-pool.h"
 #include "kdev-pg-token-stream.h"

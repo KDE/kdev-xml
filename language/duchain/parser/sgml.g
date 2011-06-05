@@ -19,24 +19,25 @@
 --
 
 [:
-#include "sgmltokenizer.h"
-#include "dtdtokenizer.h"
 #include "dtdhelper.h"
-
-#include <QtCore/QString>
-#include <QtCore/QList>
-
-#include <KDE/KMimeType>
-#include <KDE/KDebug>
-
-#include <language/interfaces/iproblem.h>
 
 namespace KDevelop
 {
     class DUContext;
 }
 
+// needed by debug-visitor, TODO: move that to debug-visitor when kdev-pg-qt 1.0 gets released
+#include "tokenizer.h"
 :]
+
+%parser_declaration_header "QtCore/QString"
+%parser_declaration_header "KDE/KMimeType"
+%parser_declaration_header "language/interfaces/iproblem.h"
+%parser_declaration_header "QtCore/QList"
+%parser_declaration_header "tokenizer.h"
+%parser_bits_header "KDE/KDebug"
+%parser_bits_header "sgmltokenizer.h"
+%parser_bits_header "dtdtokenizer.h"
 
 
 ------------------------------------------------------------

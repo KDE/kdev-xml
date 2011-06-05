@@ -22,6 +22,8 @@
 
 #include "sgmldebugvisitor.h"
 
+#include <language/interfaces/iproblem.h>
+
 namespace Xml
 {
 class KDEVSGMLDUCHAIN_EXPORT AbstractBuilder: public DefaultVisitor
