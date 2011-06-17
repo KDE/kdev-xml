@@ -408,7 +408,13 @@ void DeclarationBuilder::visitElementCloseTag(ElementCloseTagAst* node)
         if (dec)
             createAliasDeclaration(nodeText(node->ns), nodeRange(node->ns), dec);
     }
-    
+    if (!node->name) {
+        // see https://bugs.kde.org/show_bug.cgi?id=275686
+        // might happen on partially-invalid documents
+        DeclarationBuilderBase::visitElementCloseTag(node);
+        return;
+    }
+
     KDevelop::RangeInRevision range = nodeRange(node);
     createClassInstanceDeclaration(nodeText(node->name), nodeRange(node->name), ElementDeclarationData::CloseTag, nodeText(node->ns));
     DeclarationBuilderBase::visitElementCloseTag(node);

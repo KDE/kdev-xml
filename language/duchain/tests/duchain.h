@@ -36,6 +36,8 @@ private slots:
     void testEmptyDTDAttlist();
     void testUnclosedChild();
     void testDoctype();
+    void testInvalid_data();
+    void testInvalid();
 };
 
 }

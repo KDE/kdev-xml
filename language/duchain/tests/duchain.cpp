@@ -73,6 +73,7 @@ void TestDUChain::testSgmlContext()
     QEXPECT_FAIL("", "context range includes close tag", Continue);
     QVERIFY(top->childContexts().first()->range() == KDevelop::RangeInRevision(0, 21, 0, 45));
     KDevelop::Declaration *dec = top->findDeclarationAt(KDevelop::CursorInRevision(0, 0));
+    QVERIFY(dec);
     ///TODO: what shoudl the identifier be actually? And this should actually use HTML5...
 //     QCOMPARE(dec->qualifiedIdentifier().toString(), QString("DOCTYPE")); //TODO: this should not include the space
     QVERIFY(dec->qualifiedIdentifier().toString().endsWith("/http___www.w3.org_TR_html4_loose.dtd"));
@@ -120,6 +121,24 @@ void TestDUChain::testDoctype()
     QVERIFY(dynamic_cast<ImportDeclaration*>(xmlCtx->localDeclarations().first()));
     QCOMPARE(xmlCtx->localDeclarations().first()->kind(), Declaration::Import);
     QCOMPARE(xmlCtx->localDeclarations().first()->url().str(), QString("/internal/test.dtd"));
+}
+
+void TestDUChain::testInvalid_data()
+{
+    QTest::addColumn<QString>("code");
+
+    // see: https://bugs.kde.org/show_bug.cgi?id=275686
+    QTest::newRow("emptyClose") << "<xml></\n";
+}
+
+void TestDUChain::testInvalid()
+{
+    QByteArray dtd("<!ENTITY foo \"bar\" >");
+    KDevelop::TopDUContext* dtdCtx = parse(dtd, DumpAll, "/internal/test.dtd");
+    QVERIFY(dtdCtx);
+    DUChainReleaser releaseDtdCtx(dtdCtx);
+
+    // just don't crash for now
 }
 
 }
