@@ -189,10 +189,10 @@ void DeclarationBuilder::visitDtdElement(DtdElementAst* node)
             if (node->content) {
                 dec->setContentType(nodeText(node->content));
             }
-            if (node->closeTag != -1 && editor()->parseSession()->tokenStream()->token(node->closeTag).kind == Parser::Token_OPT) {
+            if (node->closeTag != -1 && editor()->parseSession()->tokenStream()->at(node->closeTag).kind == Parser::Token_OPT) {
                 dec->setCloseTagRequired(false);
             }
-            if (node->openTag != -1 && editor()->parseSession()->tokenStream()->token(node->openTag).kind == Parser::Token_OPT) {
+            if (node->openTag != -1 && editor()->parseSession()->tokenStream()->at(node->openTag).kind == Parser::Token_OPT) {
                 dec->setOpenTagRequired(false);
             }
             m_dtdElements.insert(element.first.toLower(), dec);

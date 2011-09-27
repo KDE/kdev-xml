@@ -162,7 +162,7 @@ QString IncludeBuilder::nodeText(AstNode *node) const
 {
     if (!node) return QString();
     EditorIntegrator *e = static_cast<EditorIntegrator *>(editor());
-    return tokenText(e->parseSession()->tokenStream()->token(node->startToken).begin, e->parseSession()->tokenStream()->token(node->endToken).end);
+    return tokenText(e->parseSession()->tokenStream()->at(node->startToken).begin, e->parseSession()->tokenStream()->at(node->endToken).end);
 }
 
 void Xml::IncludeBuilder::reportProblem(KDevelop::ProblemData::Severity, AstNode* ast, const QString& message)

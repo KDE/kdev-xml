@@ -68,7 +68,7 @@ public:
         attribute = 0;
         element = 0;
         debug() << (int)node->endToken;
-        if (editor->parseSession()->tokenStream()->token(node->endToken).kind == Parser::Token_GT
+        if (editor->parseSession()->tokenStream()->at(node->endToken).kind == Parser::Token_GT
                 || (node->childrenSequence && node->childrenSequence->count() > 0)) {
             contextStack.push(node);
             context = node;

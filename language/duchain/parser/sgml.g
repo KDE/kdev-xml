@@ -571,7 +571,7 @@ void Parser::tokenize(const QString& contents)
         {
             kind = Parser::Token_EOF;
         }
-        Parser::Token &t = tokenStream->next();
+        Parser::Token &t = tokenStream->push();
         t.begin = tokenizer->tokenBegin();
         t.end = tokenizer->tokenEnd();
         t.kind = kind;
@@ -599,11 +599,11 @@ QString Parser::tagName(const ElementTagAst *ast) const
     if(!ast)
         return QString();
     if(ast->ns && ast->name)
-        return tokenText(tokenStream->token(ast->ns->startToken).begin, tokenStream->token(ast->ns->endToken).end) +
+        return tokenText(tokenStream->at(ast->ns->startToken).begin, tokenStream->at(ast->ns->endToken).end) +
                 ":" +
-                tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
+                tokenText(tokenStream->at(ast->name->startToken).begin, tokenStream->at(ast->name->endToken).end);
     if(ast->name)
-        return tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
+        return tokenText(tokenStream->at(ast->name->startToken).begin, tokenStream->at(ast->name->endToken).end);
     return QString();
 }
 
@@ -613,11 +613,11 @@ QString Parser::tagName(const ElementCloseTagAst *ast) const
     if(!ast)
         return QString();
     if(ast->ns && ast->name)
-        return tokenText(tokenStream->token(ast->ns->startToken).begin, tokenStream->token(ast->ns->endToken).end) +
+        return tokenText(tokenStream->at(ast->ns->startToken).begin, tokenStream->at(ast->ns->endToken).end) +
                 ":" +
-                tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
+                tokenText(tokenStream->at(ast->name->startToken).begin, tokenStream->at(ast->name->endToken).end);
     if(ast->name)
-        return tokenText(tokenStream->token(ast->name->startToken).begin, tokenStream->token(ast->name->endToken).end);
+        return tokenText(tokenStream->at(ast->name->startToken).begin, tokenStream->at(ast->name->endToken).end);
     return QString();
 }
 
@@ -667,7 +667,7 @@ void Parser::expectedSymbol(int /*expectedSymbol*/, const QString& name)
     qint64 line;
     qint64 col;
     qint64 index = tokenStream->index()-1;
-    Token &token = tokenStream->token(index);
+    Token &token = tokenStream->at(index);
     kDebug() << "token starts at:" << token.begin;
     kDebug() << "index is:" << index;
     tokenStream->startPosition(index, &line, &col);
