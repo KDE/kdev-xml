@@ -221,7 +221,7 @@ QStringList SgmlFormatter::formatInlineSource(const QString& text, const KMimeTy
     for (int i = 0; i < list.size(); i++) {
         list[i] = leftTrim(list[i]);
     }
-    QString source = formatter->formatSource(list.join("\n"), mime);
+    QString source = formatter->formatSource(list.join("\n"), KUrl(), mime);
     if (source.length() > 0)
         return source.split('\n');
     return text.split('\n');

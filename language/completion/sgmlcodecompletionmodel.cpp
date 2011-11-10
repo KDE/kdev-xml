@@ -322,7 +322,7 @@ QString SgmlCodeCompletionModel::formatSource(Document* document, const QString&
             }
         }
         debug() << leftCtx;
-        return formatter->formatSource(code, mime, leftCtx);
+        return formatter->formatSource(code, document->url(), mime, leftCtx);
     }
     return code;
 }

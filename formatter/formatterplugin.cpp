@@ -159,12 +159,13 @@ QString FormatterPlugin::highlightModeForMime ( const KMimeType::Ptr &mime ) {
     return "SGML";
 }
 
-QString FormatterPlugin::formatSource ( const QString& text, const KMimeType::Ptr& mime, const QString& leftContext, const QString& rightContext ) {
+QString FormatterPlugin::formatSource(const QString& text, const KUrl& url, const KMimeType::Ptr& mime, const QString& leftContext = QString(), const QString& rightContext = QString())
+{
     m_style = ICore::self()->sourceFormatterController()->styleForMimeType(mime);
-    return formatSourceWithStyle(m_style, text, mime, leftContext, rightContext);
+    return formatSourceWithStyle(m_style, text, url, mime, leftContext, rightContext);
 }
 
-QString FormatterPlugin::formatSourceWithStyle(SourceFormatterStyle style, const QString& text, const KMimeType::Ptr& mime, const QString& leftContext, const QString& rightContext)
+QString FormatterPlugin::formatSourceWithStyle(SourceFormatterStyle style, const QString& text, const KUrl& url, const KMimeType::Ptr& mime, const QString& leftContext = QString(), const QString& rightContext = QString())
 {
     Formatter * formatter = formatterForMime(mime);
     formatter->loadStyle(style.content());
