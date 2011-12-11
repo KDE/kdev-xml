@@ -205,14 +205,18 @@ QString FormatterPlugin::previewText ( const KMimeType::Ptr & ) {
            "</Quote>\n";
 }
 
-ISourceFormatter::IndentationType FormatterPlugin::indentationType() {
-    return ISourceFormatter::IndentWithSpacesAndConvertTabs;
-}
-
-int FormatterPlugin::indentationLength() {
-    Formatter * formatter = formatterForMime(KMimeType::Ptr());
+/** \return The indentation of the style applicable for the given url.
+ */
+ISourceFormatter::Indentation FormatterPlugin::indentation(const KUrl& url)
+{
+    static Formatter *formatter = formatterForMime(KMimeType::Ptr());
     formatter->loadStyle(m_style.content());
-    return formatter->options() ["INDENT"].toInt();
+
+    ISourceFormatter::Indentation indent;
+    indent.indentationTabWidth = formatter->options() ["indent_size"].toInt();
+    indent.indentWidth = formatter->options() ["indent_size"].toInt();
+
+    return indent;
 }
 
 void FormatterPlugin::slotCompactXml() {

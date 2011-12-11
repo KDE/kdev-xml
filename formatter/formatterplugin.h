@@ -68,15 +68,11 @@ public:
     */
     virtual QString previewText ( const KMimeType::Ptr &mime );
 
-    /** \return The indentation type of the currently selected style.
-    */
-    virtual IndentationType indentationType();
+    /** \return The indentation of the style applicable for the given url.
+     */
+    virtual Indentation indentation(const KUrl& url);
 
-    /** \return The number of spaces used for indentation if IndentWithSpaces is used,
-    * or the number of spaces per tab if IndentWithTabs is selected.
-    */
-    virtual int indentationLength();
-    
+
     virtual QList< KDevelop::SourceFormatterStyle > predefinedStyles();
     virtual void setStyle(const KDevelop::SourceFormatterStyle& );
     virtual KDevelop::SourceFormatterStyle style() const;
