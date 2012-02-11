@@ -36,6 +36,7 @@ GenericName[x-test]=xxXML Validatorxx
 GenericName[zh_CN]=XML 校验工具
 Comment=Validates XML files against a DTD or schema
 Comment[da]=Validerer XML-filer imod en DTD eller et skema
+Comment[de]=Überprüft XML-Dateien mit einer DTD oder einem Schema
 Comment[en_GB]=Validates XML files against a DTD or schema
 Comment[es]=Valida archivos XML según una DTD o un esquema
 Comment[et]=XML-failide süntaksi kontrollimine DTD või skeemi abil
