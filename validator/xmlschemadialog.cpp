@@ -35,7 +35,7 @@ XmlSchemaDialog::XmlSchemaDialog ( QWidget* parent, Qt::WindowFlags f ) : KDialo
     KComboBox *comboBox = new KComboBox();
     comboBox->setEditable(true);
     m_comboBox = new KUrlRequester(comboBox, 0);
-    m_comboBox->setFilter("*.xsd *.XSD *.dtd *.DTD|DTD and XML Schema Documents\n*|All Files");
+    m_comboBox->setFilter(i18n("*.xsd *.XSD *.dtd *.DTD|DTD and XML Schema Documents\n*|All Files"));
     vlayout->addWidget ( new QLabel ( i18n ( "Select/Enter a XML schema URL, DTD URL or DOCTYPE:" ) ) );
     vlayout->addWidget(m_comboBox);
     vlayout->addStretch(100);

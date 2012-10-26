@@ -110,7 +110,7 @@ void XmlValidatorPlugin::showDialog() {
     QDomDocument xdoc;
     if ( !xdoc.setContent ( tdoc->text(), true, &strError, &line, &col ) ) {
         KMessageBox::error ( ICore::self()->uiController()->activeMainWindow(),
-                             QString ( "%1:\n%2:%3 %4" ).arg ( i18n ( "Error in document format" ) ).arg ( line ).arg ( col ).arg ( strError ) );
+                             i18nc ( "%1=error line, %2=error column, %3=error string", "Error in document format:\n%1:%2 %3", line, col, strError ) );
         return;
     }
 
@@ -217,7 +217,7 @@ void XmlValidatorPlugin::slotValidate() {
                 job = XmlValidatorJob::dtdValidationJob ( doc->url().toLocalFile(), schema.first );
             } else {
                 KMessageBox::error(ICore::self()->uiController()->activeMainWindow(),
-                                   i18n("Unable to determine mime type for: ") + schema.first);
+                                   i18n("Unable to determine MIME type for: %1", schema.first));
             }
         }
         if (job) {
@@ -234,11 +234,11 @@ void XmlValidatorPlugin::slotValidated(KJob* job)
     if (!validateJob)
         return;
     if (validateJob->error() == XmlValidator::InternalError) {
-        KMessageBox::error(0, i18n("Failed: Internal Error:\n") + validateJob->errorString());
+        KMessageBox::error(0, i18n("Failed: Internal Error:\n%1", validateJob->errorString()));
     } else if (validateJob->error() == XmlValidator::Failed) {
-        KMessageBox::error(0, i18n("Failed: Error:\n") + validateJob->errorString());
+        KMessageBox::error(0, i18n("Failed: Error:\n%1", validateJob->errorString()));
     } else if (validateJob->error() == XmlValidator::Success) {
-        KMessageBox::information(0, i18n("Success: The XML is valid.\n") + validateJob->errorString());
+        KMessageBox::information(0, i18n("Success: The XML is valid.\n%1", validateJob->errorString()));
     }
 }
 

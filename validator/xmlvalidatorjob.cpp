@@ -40,7 +40,7 @@ XmlValidatorJob* XmlValidatorJob::dtdValidationJob(const QString &document, cons
     XmlValidatorJob *job = new XmlValidatorJob();
     job->m_dtdUrl = dtd;
     job->m_documentUrl = document;
-    job->setObjectName(i18n("Validating document: ") + document);
+    job->setObjectName(i18n("Validating document: %1", document));
     return job;
 }
 
@@ -49,7 +49,7 @@ XmlValidatorJob* XmlValidatorJob::schemaValidationJob(const QString &document, c
     XmlValidatorJob *job = new XmlValidatorJob();
     job->m_schemaUrl = schema;
     job->m_documentUrl = document;
-    job->setObjectName(i18n("Validating document: ") + document);
+    job->setObjectName(i18n("Validating document: %1", document));
     return job;
 }
 

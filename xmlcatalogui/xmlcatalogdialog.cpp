@@ -55,7 +55,7 @@ AddSchemaDialog::AddSchemaDialog(QWidget* parent, Qt::WFlags flags): KDialog(par
     d = new AddSchemaDialogPrivate;
     d->widget = new QWidget();
     d->setupUi(d->widget);
-    d->uriEdt->setFilter("*.xsd *.XSD *.dtd *.DTD|DTD and XML Schema Documents\n*|All Files");
+    d->uriEdt->setFilter(i18n("*.xsd *.XSD *.dtd *.DTD|DTD and XML Schema Documents\n*|All Files"));
     setMainWidget(d->widget);
     setWindowTitle(i18n("Add DTD or XML Schema"));
 }
@@ -104,7 +104,7 @@ XmlCatalogDialog::XmlCatalogDialog ( QWidget* parent, Qt::WFlags flags ) : KDial
     QWidget *w = new QWidget();
     d->setupUi(w);
     this->setMainWidget(w);
-    d->fileDialog = new KFileDialog ( KUrl ( "~" ), "*.xml *.XML *.cat *.CAT|OASIS and SGML Catalogs\n*|All Files", this );
+    d->fileDialog = new KFileDialog ( KUrl ( "~" ), i18n("*.xml *.XML *.cat *.CAT|OASIS and SGML Catalogs\n*|All Files"), this );
     connect(this, SIGNAL(okClicked()), this, SLOT(exit()));
     connect(this, SIGNAL(cancelClicked()), this, SLOT(canceled()));
     connect(d->addCatalogBtn, SIGNAL(pressed()), d->fileDialog, SLOT(show()));
@@ -209,7 +209,7 @@ void XmlCatalogDialog::addCatalog(const QString& file)
     d->fileDialog->hide();
 
     if (!ICatalogManager::self()->addCatalog(KUrl(file).toLocalFile()))
-        KMessageBox::error(this, i18n("Unable to add the catalog. It is possible that this catalog is not supported: ") +  file);
+        KMessageBox::error(this, i18n("Unable to add the catalog. It is possible that this catalog is not supported: %1", file));
     else
         d->modified = true;
     
