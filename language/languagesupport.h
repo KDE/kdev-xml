@@ -25,6 +25,7 @@
 namespace KDevelop
 {
 class ParseJob;
+class IndexedString;
 }
 
 namespace Xml
@@ -40,7 +41,7 @@ public:
 
     QString name() const;
 
-    virtual KDevelop::ParseJob *createParseJob(const KUrl &url);
+    virtual KDevelop::ParseJob *createParseJob(const KDevelop::IndexedString &url);
 
     static LanguageSupport* self();
 

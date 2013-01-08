@@ -126,9 +126,9 @@ KDevelop::SimpleRange LanguageSupport::specialLanguageObjectRange(const KUrl& ur
     return KDevelop::ILanguageSupport::specialLanguageObjectRange(url, position.castToSimpleCursor());
 }
 
-KDevelop::ParseJob* LanguageSupport::createParseJob(const KUrl& url)
+KDevelop::ParseJob* LanguageSupport::createParseJob(const KDevelop::IndexedString& url)
 {
-    return new ParseJob(url);
+    return new ParseJob(url, this);
 }
 
 }

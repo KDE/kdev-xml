@@ -50,7 +50,8 @@
 namespace Xml
 {
 
-ParseJob::ParseJob(const KUrl& url) : KDevelop::ParseJob(url)
+ParseJob::ParseJob(const KDevelop::IndexedString& url, KDevelop::ILanguageSupport* languageSupport)
+        : KDevelop::ParseJob(url, languageSupport)
 {
     debug();
 }
@@ -247,7 +248,7 @@ void ParseJob::parseInclude(const IncludeBuilder::IncludeIdentifier &include, KD
 
     m_includes.insert(url.pathOrUrl(), QString::null);
 
-    ParseJob job(url);
+    ParseJob job(IndexedString(url), languageSupport());
     job.m_includes = m_includes;
     job.run();
 }
