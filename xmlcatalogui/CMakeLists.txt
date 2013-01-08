@@ -1,6 +1,3 @@
-
-add_definitions( -fPIC )
-
 set(kdevxmlcatalogui_SRCS 
     xmlcatalogmodel.cpp
     xmlcatalogplugin.cpp

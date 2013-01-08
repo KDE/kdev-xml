@@ -1,6 +1,3 @@
-
-#add_definitions( -v -Wall -fno-inline-functions -O0)
-
 set(KDEVXMLCATALOG_LIB_VERSION 1.0.0)
 set(KDEVXMLCATALOG_LIB_SOVERSION 1)
 
