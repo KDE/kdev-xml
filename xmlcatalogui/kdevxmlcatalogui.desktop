@@ -15,6 +15,7 @@ Name[sv]=Användargränssnitt för DTD eller Schema-katalog
 Name[uk]=Інтерфейс каталогу DTD/Schema
 Name[x-test]=xxDTD/Schema Catalog user interfacexx
 GenericName=XML catalog user interface
+GenericName[de]=Benutzeroberfläche für XML-Katalog
 GenericName[es]=Interfaz de usuario de catálogo XML
 GenericName[et]=XML-kataloogi kasutajaliides
 GenericName[hu]=XML katalógus felhasználói felület
