@@ -31,7 +31,7 @@ const QString ICatalogManager::ParameterFile = "catalog.manager.file";
 const QString ICatalogManager::ParameterReadonly = "catalog.manager.readonly";
 const QString ICatalogManager::ParameterName = "catalog.manager.name";
 
-ICatalogManager * ICatalogManager::instance = new CatalogManager();
+ICatalogManager* ICatalogManager::instance = 0;
 
 ICatalogManager::ICatalogManager() : QObject(QApplication::instance()) {
     Q_ASSERT(instance == 0);
@@ -43,6 +43,10 @@ ICatalogManager::~ICatalogManager() {
 }
 
 ICatalogManager* ICatalogManager::self() {
+    if (!instance) {
+        instance = new CatalogManager();
+    }
+
     return instance;
 }
 
