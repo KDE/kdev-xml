@@ -39,5 +39,6 @@ target_link_libraries(kdevsgmllanguagesupport
 
 install(TARGETS kdevsgmllanguagesupport DESTINATION ${PLUGIN_INSTALL_DIR})
 
-install(FILES kdevsgmlsupport.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+configure_file(kdevsgmlsupport.desktop.cmake ${CMAKE_CURRENT_BINARY_DIR}/kdevsgmlsupport.desktop)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kdevsgmlsupport.desktop DESTINATION ${SERVICES_INSTALL_DIR})
 

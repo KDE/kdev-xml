@@ -31,4 +31,5 @@ install(TARGETS kdevxmldocument DESTINATION ${PLUGIN_INSTALL_DIR})
 
 ########### install files ###############
 
-install(FILES kdevxmldocument.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+configure_file(kdevxmldocument.desktop.cmake ${CMAKE_CURRENT_BINARY_DIR}/kdevxmldocument.desktop)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kdevxmldocument.desktop DESTINATION ${SERVICES_INSTALL_DIR})

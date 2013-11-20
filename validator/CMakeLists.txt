@@ -26,5 +26,6 @@ install(TARGETS kdevxmlvalidator DESTINATION ${PLUGIN_INSTALL_DIR})
 
 ########### install files ###############
 
-install(FILES kdevxmlvalidator.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+configure_file(kdevxmlvalidator.desktop.cmake ${CMAKE_CURRENT_BINARY_DIR}/kdevxmlvalidator.desktop)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kdevxmlvalidator.desktop DESTINATION ${SERVICES_INSTALL_DIR})
 install(FILES kdevxmlvalidator.rc DESTINATION ${DATA_INSTALL_DIR}/kdevxmlsupport)

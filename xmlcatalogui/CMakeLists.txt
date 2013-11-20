@@ -24,5 +24,6 @@ install(TARGETS kdevxmlcatalogui DESTINATION ${PLUGIN_INSTALL_DIR})
 
 ########### install files ###############
 
-install(FILES kdevxmlcatalogui.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+configure_file(kdevxmlcatalogui.desktop.cmake ${CMAKE_CURRENT_BINARY_DIR}/kdevxmlcatalogui.desktop)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kdevxmlcatalogui.desktop DESTINATION ${SERVICES_INSTALL_DIR})
 install(FILES kdevxmlcatalogui.rc DESTINATION ${DATA_INSTALL_DIR}/kdevxmlcatalogui)

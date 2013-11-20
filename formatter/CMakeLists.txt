@@ -37,7 +37,7 @@ install(TARGETS kdevsgmlformatter DESTINATION ${PLUGIN_INSTALL_DIR})
 set(formattertest_SRCS tests/formattertest.cpp sgmlformatter.cpp htmlformatter.cpp xmlformatter.cpp formatter_debug.cpp)
 kde4_add_unit_test(formattertest ${formattertest_SRCS})
 target_link_libraries( formattertest
-    ${QT_QTTEST_LIBRARY} 
+    ${QT_QTTEST_LIBRARY}
     ${KDE4_KDEUI_LIBS}
     ${KDEVPLATFORM_INTERFACES_LIBRARIES}
     kdevsgmlduchain
@@ -45,6 +45,7 @@ target_link_libraries( formattertest
 
 ########### install files ###############
 
-install(FILES kdevsgmlformatter.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+configure_file(kdevsgmlformatter.desktop.cmake ${CMAKE_CURRENT_BINARY_DIR}/kdevsgmlformatter.desktop)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kdevsgmlformatter.desktop DESTINATION ${SERVICES_INSTALL_DIR})
 install(FILES kdevsgmlformatter.rc DESTINATION ${DATA_INSTALL_DIR}/kdevsgmlformatter)
 
