@@ -7,8 +7,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${xml_SOURCE_DIR}/cmake)
 
 set(KDE_MIN_VERSION "4.5.2")
 
-set(KDE4_BUILD_TESTS "ON" CACHE "BOOL" "Enable building of tests" FORCE )
-
 #find_package(Qt4 4.6.2 REQUIRED)
 
 find_package(KDE4 4.5.2 REQUIRED)
