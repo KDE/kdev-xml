@@ -32,7 +32,7 @@ namespace KDevelop
 
 %parser_declaration_header "QtCore/QString"
 %parser_declaration_header "KDE/KMimeType"
-%parser_declaration_header "language/interfaces/iproblem.h"
+%parser_declaration_header "language/duchain/problem.h"
 %parser_declaration_header "QtCore/QList"
 %parser_declaration_header "tokenizer.h"
 %parser_bits_header "KDE/KDebug"

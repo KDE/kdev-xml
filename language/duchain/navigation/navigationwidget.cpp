@@ -16,6 +16,7 @@
  *****************************************************************************/
 
 #include "navigationwidget.h"
+
 #include <language/duchain/declaration.h>
 #include <language/duchain/duchainlock.h>
 #include <language/duchain/duchain.h>
@@ -24,6 +25,8 @@
 #include <language/duchain/navigation/abstractdeclarationnavigationcontext.h>
 #include <language/duchain/namespacealiasdeclaration.h>
 #include <language/duchain/aliasdeclaration.h>
+
+#include <QTextDocument> // Qt::escape
 
 using namespace Xml;
 using namespace KDevelop;
