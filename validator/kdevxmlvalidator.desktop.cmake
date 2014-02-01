@@ -43,6 +43,7 @@ GenericName[ug]=XML دەلىللىگۈچ
 GenericName[uk]=Перевірка XML
 GenericName[x-test]=xxXML Validatorxx
 Comment=Validates XML files against a DTD or schema
+Comment[bs]=Potvrđuje XML datoteke protiv DTD ili sheme
 Comment[de]=Überprüft XML-Dateien mit einer DTD oder einem Schema
 Comment[es]=Valida archivos XML usando una DTD o un esquema
 Comment[et]=XML-failide süntaksi kontrollimine DTD või skeemi abil
