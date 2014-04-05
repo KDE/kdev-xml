@@ -193,7 +193,7 @@ KDevelop::SettingsWidget* FormatterPlugin::editStyleWidget ( const KMimeType::Pt
     return new FormatterPreferences ( 0 );
 }
 
-QString FormatterPlugin::previewText ( const KMimeType::Ptr & ) {
+QString FormatterPlugin::previewText(const SourceFormatterStyle&, const KMimeType::Ptr&) {
     return QString ( "<?xml version='1.0' encoding='UTF-8'?>\n" ) +
            "<Quote type=\"virtual\" >\n" +
            "  <ContactAboutQuote value=\"true\" />\n" +
