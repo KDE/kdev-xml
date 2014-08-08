@@ -23,7 +23,6 @@
 #include <QObject>
 #include <QByteArray>
 #include <QTest>
-#include <language/duchain/dumpchain.h>
 #include <language/duchain/duchain.h>
 #include <language/duchain/duchainlock.h>
 
