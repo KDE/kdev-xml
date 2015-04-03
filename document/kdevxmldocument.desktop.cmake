@@ -3,6 +3,7 @@ Type=Service
 Exec=blubb
 Icon=text-xml
 Name=XML Document Tree
+Name[ast]=Árbol de documentu XML
 Name[bs]=XML Dokument stablo
 Name[ca]=Arbre del document XML
 Name[ca@valencia]=Arbre del document XML
