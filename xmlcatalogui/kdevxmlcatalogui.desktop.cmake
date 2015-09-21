@@ -48,6 +48,7 @@ Comment[ca@valencia]=Interfície d'usuari per a gestionar esquemes en XML i docu
 Comment[de]=Benutzeroberfläche zur Verwaltung von XML-Schemata und DTD-Dokumenten
 Comment[es]=Interfaz de usuario para gestionar esquemas XML y documentos DTD
 Comment[et]=XML-skeemide ja DTD dokumentide haldamise kasutajaliides
+Comment[fi]=XML-skeemojen ja DTD-tiedostojen hallintakäyttöliittymä
 Comment[fr]=Interface utilisateur pour gérer les « schemata » XML et les documents de DTD
 Comment[gl]=Interface de usuario para xestionar esquemas de XML e documentos DTD.
 Comment[hu]=Felhasználói felület XML sémák és DTD dokumentumok kezeléséhez
